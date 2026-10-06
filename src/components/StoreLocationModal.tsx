@@ -2,7 +2,6 @@ import React from 'react';
 import { X, MapPin, Clock, Navigation, Phone, ExternalLink } from 'lucide-react';
 import { 
   STORE_ADDRESS, 
-  PRINCIPAL_ADDRESS,
   BUSINESS_GSTIN,
   BUSINESS_OWNER,
   GOOGLE_MAPS_URL, 
@@ -69,21 +68,7 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({ isOpen, 
             </div>
           </div>
 
-          {/* Principal Registered Address & GSTIN */}
-          <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-900">Principal Place of Business:</span>
-              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded-sm text-[10px]">
-                GSTIN: {BUSINESS_GSTIN}
-              </span>
-            </div>
-            <p className="text-slate-600 leading-relaxed text-[11px]">
-              {PRINCIPAL_ADDRESS}
-            </p>
-            <p className="text-[11px] text-slate-500 pt-0.5">
-              Owner / CEO: <strong className="text-slate-700">{BUSINESS_OWNER}</strong> · Proprietorship
-            </p>
-          </div>
+
 
           {/* Contact Numbers */}
           <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">

@@ -2,6 +2,105 @@ import { ProductItem } from '../types';
 
 export const PRODUCTS: ProductItem[] = [
   // ==========================================
+  // CUSTOM USER UPLOADED PRODUCT
+  // ==========================================
+  {
+    id: 'user-custom-print-product',
+    slug: 'user-custom-print-product',
+    title: 'Custom Branded Print & Signage Item',
+    subtitle: 'Uploaded via Google Drive · High Definition Offset & Digital',
+    featureBadge: 'Custom Upload',
+    category: 'custom-promotional',
+    categoryLabel: 'Custom Promotional & Merch',
+    shortDescription: 'Special custom printed item with high-resolution direct upload from customer Google Drive.',
+    detailedDescription: 'Professional high-definition printing service for custom branded items, promotional merchandise, signs, and documents. Uploaded directly from client secure Google Drive files.',
+    rating: 5.0,
+    reviewCount: 140,
+    dispatchTag: '⚡ Same-Day Store Pickup',
+    badge: 'Customer Special',
+    images: [
+      {
+        url: 'https://lh3.googleusercontent.com/d/1RE5nts0aR6wiXYZsdvhrELGa2mkO_-x1',
+        alt: 'User custom uploaded print product',
+        caption: 'Custom High-Definition Print Artwork'
+      }
+    ],
+    specs: [
+      { label: 'Print Quality', value: 'High-Resolution CMYK Full Color' },
+      { label: 'Turnaround Time', value: 'Same-Day Express Processing' },
+      { label: 'Min. Order', value: '1 unit onwards' }
+    ],
+    config: {
+      sizes: [
+        { id: 'standard', name: 'Standard Custom Size', priceMultiplier: 1.0, description: 'Custom tailored format' }
+      ],
+      materials: [
+        { id: 'premium-stock', name: 'Premium Commercial Stock', priceMultiplier: 1.0, description: 'High durability material' }
+      ],
+      finishes: [
+        { id: 'gloss-matte', name: 'Professional Gloss / Matte', priceMultiplier: 1.0, description: 'Flawless finish' }
+      ],
+      sides: [
+        { id: 'single', name: 'Single-Sided Print', priceMultiplier: 1.0, description: 'Standard layout' }
+      ],
+      quantities: [
+        { qty: 1, popular: true },
+        { qty: 10, popular: false },
+        { qty: 50, popular: false },
+        { qty: 100, popular: false }
+      ]
+    }
+  },
+
+  {
+    id: 'user-custom-print-product-2',
+    slug: 'user-custom-print-product-2',
+    title: 'Custom Corporate Print & Stationery Set',
+    subtitle: 'Uploaded via Google Drive · Premium Full Color Finish',
+    featureBadge: 'Custom Upload',
+    category: 'paper-documents',
+    categoryLabel: 'Paper & Document Printing',
+    shortDescription: 'Custom professional corporate print materials uploaded from client Google Drive.',
+    detailedDescription: 'High-quality professional commercial printing for custom corporate stationery, flyers, brochures, and marketing collateral based on customer provided artwork.',
+    rating: 4.98,
+    reviewCount: 165,
+    dispatchTag: '⚡ Same-Day Store Pickup',
+    badge: 'Customer Special',
+    images: [
+      {
+        url: 'https://lh3.googleusercontent.com/d/1WwH29iYa7QwE44WqoQdROC4o8QN-6a2V',
+        alt: 'User custom uploaded print design',
+        caption: 'Custom Client Design & Print Material'
+      }
+    ],
+    specs: [
+      { label: 'Print Stock', value: '300 GSM Art Card / Glossy Finish' },
+      { label: 'Delivery', value: 'Same-Day Express Dispatch' },
+      { label: 'Min. Order', value: '10 units onwards' }
+    ],
+    config: {
+      sizes: [
+        { id: 'standard', name: 'Standard Format', priceMultiplier: 1.0, description: 'Standard tailored dimensions' }
+      ],
+      materials: [
+        { id: 'art-card', name: '300 GSM Gloss Art Board', priceMultiplier: 1.0, description: 'Premium glossy feel' }
+      ],
+      finishes: [
+        { id: 'gloss', name: 'Gloss Lamination', priceMultiplier: 1.0, description: 'Vibrant shine' }
+      ],
+      sides: [
+        { id: 'single', name: 'Single Sided Print', priceMultiplier: 1.0, description: 'Front face print' }
+      ],
+      quantities: [
+        { qty: 50, popular: true },
+        { qty: 100, popular: false },
+        { qty: 250, popular: false },
+        { qty: 500, popular: false }
+      ]
+    }
+  },
+
+  // ==========================================
   // 1. PAPER & DOCUMENT PRINTING
   // ==========================================
 
@@ -648,6 +747,99 @@ export const PRODUCTS: ProductItem[] = [
     }
   },
 
+  // 3.1b Beer Mug & Glass Printing
+  {
+    id: 'beer-mug-printing',
+    slug: 'beer-mug-printing',
+    title: 'Custom Beer Mugs & Glass Steins',
+    subtitle: 'Frosted & Clear Glass · Permanent Sublimation Etch',
+    featureBadge: 'Glassware',
+    category: 'custom-promotional',
+    categoryLabel: 'Custom & Promotional Printing',
+    shortDescription: 'Heavy-duty frosted and clear glass beer mugs with custom names, crests, and graphic photo printing.',
+    detailedDescription: 'Celebrate milestones and parties with custom-engraved or printed glass beer mugs. Crafted from heavy dishwasher-safe thick glassware with ergonomic handles and permanent high-definition etching.',
+    rating: 4.97,
+    reviewCount: 410,
+    dispatchTag: '⚡ Same-Day Store Pickup',
+    badge: 'Party Hit',
+    images: [
+      {
+        url: 'https://images.unsplash.com/photo-1575444758702-4a6b9222336e?auto=format&fit=crop&w=1200&q=80',
+        alt: 'Custom beer mug with frosted crown print',
+        caption: 'Heavyweight Glass Beer Stein with Permanent Print'
+      }
+    ],
+    specs: [
+      { label: 'Capacity', value: '500 ml Heavyweight Glass Stein' },
+      { label: 'Material', value: 'Thick Durable Clear & Frosted Glass' },
+      { label: 'Print Type', value: 'Permanent Sublimation / Laser Frost' }
+    ],
+    config: {
+      sizes: [
+        { id: 'beer-500ml', name: 'Standard Beer Stein (500ml)', priceMultiplier: 1.0, description: 'Heavy glass mug with handle' }
+      ],
+      materials: [
+        { id: 'clear-glass', name: 'Crystal Clear Glass', priceMultiplier: 1.0, description: 'Glossy transparent finish' }
+      ],
+      finishes: [
+        { id: 'etch', name: 'Permanent Etch / Print', priceMultiplier: 1.0, description: 'Scratch-resistant' }
+      ],
+      sides: [
+        { id: 'single', name: 'Custom Print Face', priceMultiplier: 1.0, description: 'Front design' }
+      ],
+      quantities: [
+        { qty: 1, popular: true },
+        { qty: 4, popular: false }
+      ]
+    }
+  },
+
+  // 3.1c Custom Name Labels & School Slips
+  {
+    id: 'name-labels-notebook-slips',
+    slug: 'name-labels-notebook-slips',
+    title: 'Custom Name Labels & Notebook Slips',
+    subtitle: 'Waterproof Vinyl · Cartoon & Superhero Themes',
+    featureBadge: 'School Special',
+    category: 'custom-promotional',
+    categoryLabel: 'Custom & Promotional Printing',
+    shortDescription: 'Personalised waterproof name labels and notebook identification slips with cartoon, superhero, and princess themes.',
+    detailedDescription: 'Organize school books and stationery with custom waterproof name labels and notebook slips. Printed on tear-proof vinyl with vibrant Disney, Spiderman, Avengers, and Unicorn graphics.',
+    rating: 4.95,
+    reviewCount: 530,
+    dispatchTag: '⚡ Ready in 15 Mins',
+    badge: 'Kids Favorite',
+    images: [
+      {
+        url: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1200&q=80',
+        alt: 'Custom waterproof notebook name labels and slips',
+        caption: 'Waterproof Glossy Name Labels & Notebook Slips Sheet'
+      }
+    ],
+    specs: [
+      { label: 'Sheet Size', value: 'A4 Waterproof Vinyl Sticker Sheet' },
+      { label: 'Durability', value: '100% Waterproof, Tear-Proof & Scratch-Proof' }
+    ],
+    config: {
+      sizes: [
+        { id: 'sheet-a4', name: 'A4 Sticker Sheet (Set of 32 Labels)', priceMultiplier: 1.0, description: 'Assorted sizes for books & bottles' }
+      ],
+      materials: [
+        { id: 'vinyl', name: 'Glossy Waterproof Vinyl', priceMultiplier: 1.0, description: 'Durable adhesive' }
+      ],
+      finishes: [
+        { id: 'die-cut', name: 'Die-Cut Easy Peel', priceMultiplier: 1.0, description: 'Ready to peel and stick' }
+      ],
+      sides: [
+        { id: 'single', name: 'Full Color Sheet', priceMultiplier: 1.0, description: 'Vibrant print' }
+      ],
+      quantities: [
+        { qty: 1, popular: true },
+        { qty: 5, popular: false }
+      ]
+    }
+  },
+
   // 3.2 T-Shirt Printing
   {
     id: 'tshirt-printing-custom',
@@ -756,53 +948,150 @@ export const PRODUCTS: ProductItem[] = [
     }
   },
 
-  // 3.4 Custom Photo Cushions & Keychains
+  // 3.4a Dedicated Section: Custom Mugs & Magic Coffee Mugs
   {
-    id: 'photo-cushions-keychains',
-    slug: 'photo-cushions-keychains',
-    title: 'Custom Photo Cushions & Printed Keychains',
-    subtitle: 'Printed in 15 Mins · Satin Fabric & Metal Keyrings',
-    featureBadge: '15-Min Ready',
+    id: 'custom-mugs-section',
+    slug: 'custom-mugs-section',
+    title: 'Custom Photo Mugs & Magic Coffee Mugs',
+    subtitle: 'Printed in 10 Mins · Grade-A Ceramic & Heat-Sensitive',
+    featureBadge: 'Mugs Collection',
     category: 'custom-promotional',
     categoryLabel: 'Custom & Promotional Printing',
-    shortDescription: 'Personalised silky satin throw cushions with soft fiber filling and double-sided metallic/acrylic photo keychains.',
-    detailedDescription: 'Surprise your loved ones with personalized room decor and everyday accessories. Available as square or heart-shaped satin cushions with washable photo covers, and durable metal/crystal photo keychains.',
-    rating: 4.93,
-    reviewCount: 390,
-    dispatchTag: '⚡ 15-Minute Express Store Pickup',
-    badge: 'Popular Gift',
+    shortDescription: 'Personalised ceramic coffee mugs, color-changing magic mugs, and couple mugs with vibrant 360-degree sublimation printing.',
+    detailedDescription: 'Transform your daily coffee routine or gift cherished memories with premium ceramic mugs. Featuring grade-A glossy white polymer coating, dishwasher safety, and magical heat-sensitive color-changing mugs that reveal hidden photos when hot beverages are poured.',
+    rating: 4.98,
+    reviewCount: 1120,
+    dispatchTag: '⚡ 10-Minute Express Store Pickup',
+    badge: 'Mugs Bestseller',
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?auto=format&fit=crop&w=1200&q=80',
-        alt: 'Personalised custom photo cushion with pillow filler',
-        caption: '16" x 16" Satin Photo Cushion with Soft Microfiber Filling'
+        url: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=80',
+        alt: 'Personalised ceramic coffee mug with couple photo',
+        caption: 'Grade-A Ceramic Mug with 360° Panoramic Sublimation Print'
       }
     ],
     specs: [
-      { label: 'Cushion Size', value: '16" × 16" (Square) or 14" × 14" (Heart Shape)' },
-      { label: 'Fabric', value: 'Silky Gloss Satin with Concealed Zipper' },
-      { label: 'Keychain Materials', value: 'Brushed Metal Alloy / Acrylic with Sturdy Ring' },
-      { label: 'Turnaround Time', value: '15-30 Minutes at Mahavir Enclave counter' }
+      { label: 'Capacity', value: '330 ml (11 oz Standard Ceramic)' },
+      { label: 'Material', value: 'Pure White Grade-A Microwave-Safe Ceramic' },
+      { label: 'Turnaround Time', value: '10 Minutes at Mahavir Enclave store counter' }
     ],
     config: {
       sizes: [
-        { id: 'cushion-square', name: 'Square Satin Photo Cushion (16" × 16")', priceMultiplier: 1.0, description: 'Includes outer washable cover + soft microfiber filler' },
-        { id: 'cushion-magic', name: 'Magic Sequin Cushion (Swipe to Reveal Photo)', priceMultiplier: 1.45, description: 'Reversible glitter sequins reveal photo on brush' },
-        { id: 'keychain-metal', name: 'Metal Alloy Photo Keychain (Pack of 2)', priceMultiplier: 0.55, description: 'Gloss photo insert with scratchproof coating' }
+        { id: 'white-mug', name: 'Classic White Ceramic Mug (11oz)', priceMultiplier: 1.0, description: 'Universal photo and logo coffee mug' },
+        { id: 'magic-mug', name: 'Heat-Sensitive Magic Mug (Black to Photo)', priceMultiplier: 1.45, description: 'Reveals photo magically upon pouring hot liquid' },
+        { id: 'inner-color-mug', name: 'Two-Tone Inner Color Mug (Red/Blue/Pink)', priceMultiplier: 1.2, description: 'Matching handle and vibrant inner glaze' }
       ],
       materials: [
-        { id: 'satin-white', name: 'Silky White Satin Fabric', priceMultiplier: 1.0, description: 'Vibrant photo reproduction' }
+        { id: 'ceramic', name: 'Grade-A Glossy Ceramic', priceMultiplier: 1.0, description: 'Scratch-resistant polymer coating' }
       ],
       finishes: [
-        { id: 'sublimation', name: 'Edge-to-Edge Sublimation Print', priceMultiplier: 1.0, description: 'Washable & fade-free' }
+        { id: 'gloss', name: 'High-Gloss Sublimation Print', priceMultiplier: 1.0, description: 'Vibrant non-fading colors' }
       ],
       sides: [
-        { id: 'single', name: 'Front Photo Print', priceMultiplier: 1.0, description: 'Single face photo' }
+        { id: 'wrap', name: '360-Degree Panoramic Wrap', priceMultiplier: 1.0, description: 'Full wrap-around design' }
+      ],
+      quantities: [
+        { qty: 1, popular: true },
+        { qty: 5, popular: false },
+        { qty: 10, popular: false }
+      ]
+    }
+  },
+
+  // 3.4b Dedicated Section: Personalized Keychains
+  {
+    id: 'personalized-keychains-section',
+    slug: 'personalized-keychains-section',
+    title: 'Personalized Metal & Hexagon Keychains',
+    subtitle: 'Printed in 15 Mins · Double-Sided Crystal Photo Inserts',
+    featureBadge: 'Keychains Collection',
+    category: 'custom-promotional',
+    categoryLabel: 'Custom & Promotional Printing',
+    shortDescription: 'Custom photo keychains in hexagon, square, and metal alloy shapes with crystal-clear scratchproof photo inserts.',
+    detailedDescription: 'Carry your favorite memories everywhere or gift branded corporate keychains. Crafted with sturdy metal alloy rings, polished acrylic or wooden backing, and ultra-glossy high-definition photo printing on both sides.',
+    rating: 4.94,
+    reviewCount: 680,
+    dispatchTag: '⚡ 15-Minute Express Store Pickup',
+    badge: 'Keychain Favorite',
+    images: [
+      {
+        url: 'https://images.unsplash.com/photo-1629814491321-99f2b87ff74d?auto=format&fit=crop&w=1200&q=80',
+        alt: 'Custom hexagon and metal photo keychains',
+        caption: 'Double-Sided Crystal Photo Keychain with Sturdy Ring'
+      }
+    ],
+    specs: [
+      { label: 'Shapes', value: 'Hexagon, Rectangle, Circular, Heart' },
+      { label: 'Material', value: 'Brushed Metal Alloy / Heavy Acrylic / Wood' },
+      { label: 'Turnaround Time', value: '15 Minutes at Mahavir Enclave store' }
+    ],
+    config: {
+      sizes: [
+        { id: 'hexagon-keychain', name: 'Hexagon Custom Photo Keychain', priceMultiplier: 1.0, description: 'Modern geometric shape with double-sided photo' },
+        { id: 'metal-keychain', name: 'Executive Metal Alloy Keychain', priceMultiplier: 1.25, description: 'Heavyweight metallic keyring with laser engraving' }
+      ],
+      materials: [
+        { id: 'acrylic-gloss', name: 'Glossy Crystal Acrylic', priceMultiplier: 1.0, description: 'Crystal clarity with protective resin' }
+      ],
+      finishes: [
+        { id: 'double-sided', name: 'Double-Sided Photo Insert', priceMultiplier: 1.0, description: 'Different photo on front & back' }
+      ],
+      sides: [
+        { id: 'front-back', name: 'Both Sides Printed', priceMultiplier: 1.0, description: 'Full color' }
       ],
       quantities: [
         { qty: 1, popular: true },
         { qty: 2, popular: false },
         { qty: 5, popular: false }
+      ]
+    }
+  },
+
+  // 3.4c Dedicated Section: Heart Pillows & Satin Cushions
+  {
+    id: 'heart-pillows-cushions-section',
+    slug: 'heart-pillows-cushions-section',
+    title: 'Heart Pillows & Romantic Satin Cushions',
+    subtitle: 'Printed in 20 Mins · Soft Microfiber & Glossy Satin',
+    featureBadge: 'Heart Pillows',
+    category: 'custom-promotional',
+    categoryLabel: 'Custom & Promotional Printing',
+    shortDescription: 'Romantic heart-shaped pillows and square silky satin cushions with custom couple photo printing and soft fiber filling.',
+    detailedDescription: 'Express your love with custom-printed heart pillows and plush satin cushions. Crafted from ultra-soft glossy white satin fabric with a hidden zipper, plush microfiber stuffing, and vibrant couple photo sublimation.',
+    rating: 4.97,
+    reviewCount: 540,
+    dispatchTag: '⚡ 20-Minute Express Store Pickup',
+    badge: 'Romantic Gift',
+    images: [
+      {
+        url: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?auto=format&fit=crop&w=1200&q=80',
+        alt: 'Heart-shaped satin pillow and photo cushion',
+        caption: '14" x 14" Heart Pillow & Satin Cushion with Microfiber Fill'
+      }
+    ],
+    specs: [
+      { label: 'Shape & Size', value: 'Heart Shape (14" × 14") or Square (16" × 16")' },
+      { label: 'Fabric', value: 'Silky Gloss Satin Cover with Plush Microfiber Filler' },
+      { label: 'Turnaround Time', value: '20 Minutes at Mahavir Enclave store counter' }
+    ],
+    config: {
+      sizes: [
+        { id: 'heart-pillow', name: 'Romantic Heart-Shaped Pillow (14" × 14")', priceMultiplier: 1.1, description: 'Includes heart satin cover + soft filling' },
+        { id: 'square-cushion', name: 'Square Satin Couple Cushion (16" × 16")', priceMultiplier: 1.0, description: 'Classic square throw pillow with photo' },
+        { id: 'magic-sequin-pillow', name: 'Heart Magic Sequin Pillow (Swipe to Reveal)', priceMultiplier: 1.5, description: 'Reversible glitter sequin heart pillow' }
+      ],
+      materials: [
+        { id: 'satin-fabric', name: 'Silky White Gloss Satin', priceMultiplier: 1.0, description: 'Luxurious soft touch' }
+      ],
+      finishes: [
+        { id: 'sublimation-soft', name: 'Permanent Sublimation Print', priceMultiplier: 1.0, description: 'Washable and fade-free' }
+      ],
+      sides: [
+        { id: 'front', name: 'Couple Photo Front Print', priceMultiplier: 1.0, description: 'Personalized face' }
+      ],
+      quantities: [
+        { qty: 1, popular: true },
+        { qty: 2, popular: false }
       ]
     }
   },
@@ -1040,8 +1329,7 @@ export const PRODUCTS: ProductItem[] = [
     specs: [
       { label: 'Base Panel', value: '3mm / 4mm Exterior Grade Aluminum Composite Panel (ACP)' },
       { label: '3D Lettering', value: 'Laser-Cut 3mm to 10mm Cast Acrylic Sheet with Beveled Edges' },
-      { label: 'Lighting', value: 'High-Efficiency Waterproof IP67 LED Modules + Meanwell SMPS' },
-      { label: 'Warranty', value: '1 Year Full Electrical & LED Driver Replacement Warranty' }
+      { label: 'Lighting', value: 'High-Efficiency Waterproof IP67 LED Modules + Meanwell SMPS' }
     ],
     config: {
       sizes: [

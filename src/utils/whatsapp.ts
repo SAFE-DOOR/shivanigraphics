@@ -1,9 +1,9 @@
 import { CartItem } from '../types';
 
-export const WHATSAPP_PRIMARY = '919810157695';
-export const PHONE_PRIMARY = '919810157695';
-export const PHONE_SECONDARY = '919266944315';
-export const PHONE_HELPLINE = '919266944315';
+export const WHATSAPP_PRIMARY = '919266944315';
+export const PHONE_PRIMARY = '919266944315';
+export const PHONE_SECONDARY = '919810157695';
+export const PHONE_HELPLINE = '919810157695';
 export const SUPPORT_EMAIL = 'shivanidigitalprints@gmail.com';
 
 // Official Registered Business Credentials
@@ -13,7 +13,6 @@ export const BUSINESS_GSTIN = '07AGJPR4456J1ZW';
 export const BUSINESS_OWNER = 'Ranjan';
 export const BUSINESS_OWNER_FULL = 'Ranjan Roy';
 export const BUSINESS_TYPE = 'Proprietorship';
-export const PRINCIPAL_ADDRESS = 'RZC 1/98B C1 Block, Vinod Puri, Vijay Enclave, South Delhi, Delhi - 110045';
 export const STORE_ADDRESS = 'D3/50, Gali No. 8A, Mahavir Enclave, New Delhi, Delhi 110045';
 export const GOOGLE_MAPS_URL = 'https://maps.app.goo.gl/ikQBMVPFCSfpzAjG9?g_st=ac';
 export const INSTAGRAM_URL = 'https://www.instagram.com/shivanigraphics_?utm_source=ig_web_button_share_sheet&stkn=ZDNlZDc0MzIxNw==';
@@ -29,6 +28,8 @@ export interface WhatsAppOrderPayload {
   notes?: string;
   customerName?: string;
   customerCity?: string;
+  uploadedImageName?: string;
+  designLink?: string;
 }
 
 export function generateWhatsAppOrderUrl(payload: WhatsAppOrderPayload): string {
@@ -45,6 +46,18 @@ export function generateWhatsAppOrderUrl(payload: WhatsAppOrderPayload): string 
     `*Artwork File Status:* ${payload.hasArtwork ? '✅ Print-ready PDF/CDR ready to share' : '🎨 Need Shivani Design Support'}`,
   ];
 
+  if (payload.uploadedImageName) {
+    lines.push(`*Attached Design/Image:* 📎 ${payload.uploadedImageName}`);
+  }
+
+  if (payload.designLink && payload.designLink.trim()) {
+    if (payload.designLink.startsWith('data:')) {
+      lines.push(`*Design File:* 📎 Attached locally (Ready to send in WhatsApp chat)`);
+    } else {
+      lines.push(`*Design File Link:* 🔗 ${payload.designLink.trim()}`);
+    }
+  }
+
   if (payload.customerName) {
     lines.push(`*Customer Name:* ${payload.customerName}`);
   }
@@ -57,7 +70,7 @@ export function generateWhatsAppOrderUrl(payload: WhatsAppOrderPayload): string 
 
   lines.push(`--------------------------------------`);
   lines.push(`_Store: ${STORE_ADDRESS}_`);
-  lines.push(`_Direct Lines: +91-9810157695 / +91-9266944315_`);
+  lines.push(`_Direct Lines: +91-9266944315 / +91-9810157695_`);
   lines.push(`Please provide your best quotation, digital proof preview, and delivery schedule.`);
 
   const message = lines.join('\n');

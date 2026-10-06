@@ -23,8 +23,7 @@ import {
   BUSINESS_GSTIN,
   BUSINESS_OWNER,
   BUSINESS_OWNER_FULL,
-  BUSINESS_TYPE,
-  PRINCIPAL_ADDRESS
+  BUSINESS_TYPE
 } from '../utils/whatsapp';
 
 interface AboutUsPageProps {
@@ -205,11 +204,7 @@ export const AboutUsPage: React.FC<AboutUsPageProps> = ({ onBackToHome, onExplor
               <p className="text-slate-500 font-medium">Full Commercial Invoices for Corporate ITC</p>
             </div>
 
-            <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1 sm:col-span-2 md:col-span-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Principal Place of Business</span>
-              <p className="font-bold text-slate-900 leading-relaxed">{PRINCIPAL_ADDRESS}</p>
-              <p className="text-[11px] text-slate-500">Jurisdiction: South Delhi, Delhi - 110045</p>
-            </div>
+
 
             <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1">
               <span className="text-[10px] font-bold text-slate-400 uppercase">Verified Helplines</span>

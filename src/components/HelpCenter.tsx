@@ -5,7 +5,6 @@ import {
   PHONE_SECONDARY, 
   SUPPORT_EMAIL, 
   STORE_ADDRESS, 
-  PRINCIPAL_ADDRESS,
   BUSINESS_GSTIN,
   GOOGLE_MAPS_URL 
 } from '../utils/whatsapp';
@@ -96,7 +95,7 @@ export const HelpCenter: React.FC<HelpCenterProps> = ({ isOpen, onClose, isModal
             <h3 className="font-black text-base text-slate-900">Postal & Store Address</h3>
             <div className="text-xs text-slate-700 font-medium mt-1 leading-relaxed space-y-1">
               <p><strong>Store & Counter:</strong> {STORE_ADDRESS}</p>
-              <p className="text-[11px] text-slate-500"><strong>Principal Place:</strong> {PRINCIPAL_ADDRESS}</p>
+
               <p className="text-[11px] font-mono text-purple-900 font-bold">GSTIN: {BUSINESS_GSTIN}</p>
             </div>
           </div>

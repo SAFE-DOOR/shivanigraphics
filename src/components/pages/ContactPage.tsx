@@ -24,8 +24,7 @@ import {
   BUSINESS_GSTIN,
   BUSINESS_OWNER,
   BUSINESS_OWNER_FULL,
-  BUSINESS_TYPE,
-  PRINCIPAL_ADDRESS
+  BUSINESS_TYPE
 } from '../../utils/whatsapp';
 
 interface ContactPageProps {
@@ -229,7 +228,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBackToHome }) => {
                 <p><strong className="text-slate-900">Trade Name:</strong> Shivani Graphics ({BUSINESS_TYPE})</p>
                 <p><strong className="text-slate-900">GSTIN:</strong> <span className="font-mono font-bold bg-white px-1.5 py-0.5 rounded border border-slate-200">{BUSINESS_GSTIN}</span></p>
                 <p><strong className="text-slate-900">Owner / CEO:</strong> {BUSINESS_OWNER} ({BUSINESS_OWNER_FULL})</p>
-                <p><strong className="text-slate-900">Principal Address:</strong> {PRINCIPAL_ADDRESS}</p>
+
                 <p><strong className="text-slate-900">Store Facility:</strong> {STORE_ADDRESS}</p>
                 <p><strong className="text-slate-900">Direct Helplines:</strong> +91-9810157695 / +91-9266944315</p>
               </div>

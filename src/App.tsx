@@ -24,6 +24,7 @@ import { PrivacyPage } from './components/pages/PrivacyPage';
 import { RefundPolicyPage } from './components/pages/RefundPolicyPage';
 import { ArtworkGuidelinesPage } from './components/pages/ArtworkGuidelinesPage';
 import { ContactPage } from './components/pages/ContactPage';
+import { PaymentBillingPage } from './components/pages/PaymentBillingPage';
 
 export type AppView = 
   | 'home' 
@@ -36,7 +37,8 @@ export type AppView =
   | 'privacy'
   | 'refund-policy'
   | 'artwork-guidelines'
-  | 'contact';
+  | 'contact'
+  | 'payment-billing';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<AppView>('home');
@@ -62,7 +64,8 @@ export default function App() {
         'contact', 
         'about', 
         'track', 
-        'help'
+        'help',
+        'payment-billing'
       ];
       if (validViews.includes(hash as AppView)) {
         setCurrentView(hash as AppView);
@@ -196,18 +199,14 @@ export default function App() {
           >
             {/* Home Feed */}
             {currentView === 'home' && (
-              <>
-                <PrintoHomeFeed
-                  products={PRODUCTS}
-                  onSelectProduct={handleSelectProduct}
-                  onSelectCategory={handleSelectCategory}
-                  onOpenBulkModal={() => setIsBulkModalOpen(true)}
-                  onOpenStoreModal={() => navigateTo('contact')}
-                  onOpenArtworkGuide={() => navigateTo('artwork-guidelines')}
-                />
-                {/* Embedded Help Center on Home Bottom */}
-                <HelpCenter />
-              </>
+              <PrintoHomeFeed
+                products={PRODUCTS}
+                onSelectProduct={handleSelectProduct}
+                onSelectCategory={handleSelectCategory}
+                onOpenBulkModal={() => setIsBulkModalOpen(true)}
+                onOpenStoreModal={() => navigateTo('contact')}
+                onOpenArtworkGuide={() => navigateTo('artwork-guidelines')}
+              />
             )}
 
             {/* Product Detail Subpage */}
@@ -265,6 +264,13 @@ export default function App() {
             {/* Dedicated Sub-Page 5: Contact Us & Store Facility Location */}
             {currentView === 'contact' && (
               <ContactPage
+                onBackToHome={() => navigateTo('home')}
+              />
+            )}
+
+            {/* Dedicated Sub-Page 6: Payment & Billing (UPI) */}
+            {currentView === 'payment-billing' && (
+              <PaymentBillingPage
                 onBackToHome={() => navigateTo('home')}
               />
             )}
