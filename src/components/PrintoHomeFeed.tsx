@@ -853,59 +853,6 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
         </div>
       </section>
 
-      {/* 7.5 Shivani Rewards & Corporate Loyalty Club */}
-      <section className="px-4 sm:px-6 max-w-7xl mx-auto py-4">
-        <div className="bg-gradient-to-br from-amber-500 via-orange-600 to-amber-700 rounded-3xl p-6 sm:p-10 text-white shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative z-10 space-y-6 max-w-4xl mx-auto text-center">
-            <span className="px-3.5 py-1 bg-white/20 text-white font-black text-xs rounded-full uppercase tracking-wider backdrop-blur-md">
-              👑 Shivani Rewards & Corporate Club
-            </span>
-
-            <h2 className="text-2xl sm:text-4xl font-black tracking-tight">
-              Exclusive Privileges for Regular & Corporate Clients
-            </h2>
-
-            <p className="text-xs sm:text-sm text-amber-100 max-w-2xl mx-auto leading-relaxed">
-              Print more, save more. Join our loyal business community to unlock automatic tiered rebates, priority counter queue bypass, and deferred corporate invoicing.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-left">
-              <div className="p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 space-y-2">
-                <span className="text-xs font-black text-amber-200 uppercase tracking-wide">Tier 1: Silver Partner</span>
-                <h4 className="text-base font-black">10% Repeat Rebate</h4>
-                <p className="text-[11px] text-amber-100">For regular monthly print orders & office stationery.</p>
-              </div>
-
-              <div className="p-4 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30 space-y-2 shadow-lg">
-                <span className="text-xs font-black text-amber-300 uppercase tracking-wide">Tier 2: Gold Corporate</span>
-                <h4 className="text-base font-black">18% Off + Priority 2-Hr</h4>
-                <p className="text-[11px] text-amber-100">Dedicated prepress designer & GST ITC invoicing.</p>
-              </div>
-
-              <div className="p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 space-y-2">
-                <span className="text-xs font-black text-amber-200 uppercase tracking-wide">Tier 3: Platinum Enterprise</span>
-                <h4 className="text-base font-black">25% Off + Credit Terms</h4>
-                <p className="text-[11px] text-amber-100">For large institutions, schools, and event agencies.</p>
-              </div>
-            </div>
-
-            <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
-              <a
-                href={`https://wa.me/${WHATSAPP_PRIMARY}?text=${encodeURIComponent('Hello Shivani Graphics! I want to join the Shivani Rewards Corporate Club and check my business loyalty tier.')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-3.5 bg-white text-orange-800 hover:bg-slate-100 font-black text-xs sm:text-sm rounded-2xl transition-all shadow-lg flex items-center gap-2 cursor-pointer"
-              >
-                <MessageCircle className="w-4.5 h-4.5 text-orange-700" />
-                <span>Enroll in Shivani Rewards on WhatsApp 👑</span>
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* 8. Frequently Asked Questions Section */}
       <section className="px-4 sm:px-6 max-w-7xl mx-auto pt-2">
         <h2 className="text-lg sm:text-2xl font-black text-slate-900 mb-4">

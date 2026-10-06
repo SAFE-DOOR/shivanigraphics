@@ -20,6 +20,7 @@ interface FooterProps {
   onNavigateAbout?: () => void;
   onNavigateTrack?: () => void;
   onNavigatePolicy?: (policy: PolicyRoute) => void;
+  onOpenAdminModal?: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({
@@ -29,7 +30,8 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenBulkModal,
   onNavigateAbout,
   onNavigateTrack,
-  onNavigatePolicy
+  onNavigatePolicy,
+  onOpenAdminModal
 }) => {
   const [openSection, setOpenSection] = useState<string | null>(null);
 

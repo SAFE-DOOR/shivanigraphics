@@ -25,6 +25,7 @@ import { RefundPolicyPage } from './components/pages/RefundPolicyPage';
 import { ArtworkGuidelinesPage } from './components/pages/ArtworkGuidelinesPage';
 import { ContactPage } from './components/pages/ContactPage';
 import { PaymentBillingPage } from './components/pages/PaymentBillingPage';
+import { AdminPanelModal } from './components/AdminPanelModal';
 
 export type AppView = 
   | 'home' 
@@ -43,7 +44,18 @@ export type AppView =
 export default function App() {
   const [currentView, setCurrentView] = useState<AppView>('home');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
-  const [activeProduct, setActiveProduct] = useState<ProductItem>(PRODUCTS[0]);
+  const [products, setProducts] = useState<ProductItem[]>(() => {
+    const saved = localStorage.getItem('shivanigraphics_custom_products');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return PRODUCTS;
+      }
+    }
+    return PRODUCTS;
+  });
+  const [activeProduct, setActiveProduct] = useState<ProductItem>(products[0]);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   // Modals state
@@ -51,11 +63,16 @@ export default function App() {
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isCartModalOpen, setIsCartModalOpen] = useState(false);
   const [isHelpCenterModalOpen, setIsHelpCenterModalOpen] = useState(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
 
   // Sync view from hash / path on initial load and handle browser back/forward buttons
   useEffect(() => {
     const handleLocationChange = () => {
       const hash = window.location.hash.replace(/^#\/?/, '');
+      if (hash === 'owner-admin') {
+        setIsAdminModalOpen(true);
+        return;
+      }
       const validViews: AppView[] = [
         'terms', 
         'privacy', 
@@ -150,7 +167,7 @@ export default function App() {
 
       {/* 2. Main Printo-Style Navigation Header */}
       <Header
-        products={PRODUCTS}
+        products={products}
         selectedCategoryId={selectedCategoryId}
         onSelectProduct={handleSelectProduct}
         onSelectCategory={handleSelectCategory}
@@ -170,7 +187,7 @@ export default function App() {
         onClose={() => setIsMobileMenuOpen(false)}
         selectedCategory={selectedCategoryId}
         onSelectCategory={handleSelectCategory}
-        products={PRODUCTS}
+        products={products}
         onSelectProduct={handleSelectProduct}
         onOpenStoreModal={() => navigateTo('contact')}
         onOpenHelpCenter={() => setIsHelpCenterModalOpen(true)}
@@ -200,7 +217,7 @@ export default function App() {
             {/* Home Feed */}
             {currentView === 'home' && (
               <PrintoHomeFeed
-                products={PRODUCTS}
+                products={products}
                 onSelectProduct={handleSelectProduct}
                 onSelectCategory={handleSelectCategory}
                 onOpenBulkModal={() => setIsBulkModalOpen(true)}
@@ -213,7 +230,7 @@ export default function App() {
             {currentView === 'product' && (
               <ProductDetailPage
                 product={activeProduct}
-                allProducts={PRODUCTS}
+                allProducts={products}
                 onBack={() => navigateTo('home')}
                 onSelectProduct={handleSelectProduct}
                 onAddToCart={handleAddToCart}
@@ -225,7 +242,7 @@ export default function App() {
             {currentView === 'category' && (
               <CategoryPage
                 categoryId={selectedCategoryId}
-                products={PRODUCTS}
+                products={products}
                 onSelectProduct={handleSelectProduct}
                 onSelectCategory={handleSelectCategory}
                 onBackToHome={() => navigateTo('home')}
@@ -332,6 +349,13 @@ export default function App() {
       <BulkQuoteModal
         isOpen={isBulkModalOpen}
         onClose={() => setIsBulkModalOpen(false)}
+      />
+
+      <AdminPanelModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+        products={products}
+        onUpdateProducts={(updated) => setProducts(updated)}
       />
 
     </div>
