@@ -176,7 +176,7 @@ export const PRODUCTS: ProductItem[] = [
     badge: 'Popular Corporate',
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=1200&q=80',
+        url: 'https://kommodo.ai/i/Ivg3kEpp3DOokw3RRrsu',
         alt: 'Custom spiral notebook with company logo',
         caption: 'Wire-O Metal Spiral with Velvet Laminated Cover'
       }
@@ -857,8 +857,8 @@ export const PRODUCTS: ProductItem[] = [
     badge: 'Merch Favorite',
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=1200&q=80',
-        alt: 'Custom printed black and white cotton t-shirts',
+        url: 'https://images.unsplash.com/photo-1562157873-818bc0726f68?auto=format&fit=crop&w=1200&q=80',
+        alt: 'Custom printed cotton t-shirts on hangers',
         caption: '180 GSM Bio-Washed Cotton T-Shirt with High-Density DTF Print'
       }
     ],

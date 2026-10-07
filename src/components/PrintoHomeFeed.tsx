@@ -131,7 +131,7 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
       subtitle: 'Hardcover journals, wire-o metal spiral binding, peel & seal envelopes, and GST bill books',
       badge: '⚡ 24-Hour Express Dispatch',
       minQty: 'Min. Qty: 25 books',
-      image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=1200&q=80',
+      image: 'https://kommodo.ai/i/Ivg3kEpp3DOokw3RRrsu',
       gradient: 'from-black/90 via-black/60 to-black/35',
       ctaText: 'Explore Custom Notebooks'
     },
@@ -157,7 +157,7 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
       subtitle: 'Durable metal wire-o and plastic coil spring binding for notebooks, reports, thesis, and training manuals',
       badge: '⚡ 15-Minute Store Pickup',
       minQty: 'Min. Qty: 1 book',
-      image: '/15_binding_services.png',
+      image: 'https://kommodo.ai/i/Ivg3kEpp3DOokw3RRrsu',
       gradient: 'from-black/90 via-black/60 to-black/35',
       ctaText: 'Explore Spring Binding'
     }
@@ -721,51 +721,45 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
           </button>
         </div>
 
-        {/* 5 Spacious Category Gateway Cards */}
+        {/* 5 Spacious Category Gateway Cards (Minimalist Elegant Light Cards) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {officialCategoryPortals.map((portal) => (
             <motion.div
               key={portal.id}
-              whileHover={{ y: -4 }}
+              whileHover={{ y: -5, scale: 1.01 }}
               onClick={() => handleCategoryNavigate(portal.id)}
-              className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden cursor-pointer hover:shadow-xl hover:border-[#50007c]/40 transition-all duration-300 group flex flex-col justify-between"
+              className="bg-white rounded-3xl p-6 border-2 border-slate-100 hover:border-[#50007c] shadow-md hover:shadow-2xl transition-all duration-300 cursor-pointer group flex flex-col justify-between space-y-6 relative overflow-hidden"
             >
-              <div className="relative aspect-16/10 bg-slate-100 overflow-hidden">
-                <img
-                  src={portal.image}
-                  alt={portal.title}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
-                
-                <span className={`absolute top-3 left-3 px-2.5 py-1 text-[10px] font-black rounded-lg shadow-xs uppercase tracking-wider ${portal.tagColor}`}>
-                  {portal.badge}
-                </span>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-100/50 rounded-full blur-2xl group-hover:bg-orange-100 transition-colors pointer-events-none" />
 
-                <div className="absolute bottom-3 left-3 right-3 text-white">
-                  <h3 className="text-base sm:text-lg font-black tracking-tight leading-snug drop-shadow-sm group-hover:text-orange-300 transition-colors">
-                    {portal.title}
-                  </h3>
+              <div className="relative z-10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className={`px-3.5 py-1 text-[11px] font-black rounded-full uppercase tracking-wider ${portal.tagColor} shadow-2xs`}>
+                    {portal.badge}
+                  </span>
+                  <div className="w-10 h-10 rounded-2xl bg-purple-50 group-hover:bg-[#50007c] text-[#50007c] group-hover:text-white flex items-center justify-center transition-all shadow-sm">
+                    <FolderOpen className="w-5 h-5" />
+                  </div>
                 </div>
-              </div>
 
-              <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
+                <h3 className="text-lg sm:text-xl font-black tracking-tight text-slate-900 group-hover:text-[#50007c] transition-colors leading-snug">
+                  {portal.title}
+                </h3>
+
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-2">
                   {portal.subtitle}
                 </p>
+              </div>
 
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500">
-                    {portal.itemCount} Verified Products
-                  </span>
-                  
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#50007c] group-hover:text-orange-600 transition-colors">
-                    <span>Open Category Page</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                  </span>
-                </div>
+              <div className="relative z-10 pt-4 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-xs font-extrabold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+                  {portal.itemCount} Items Available
+                </span>
+
+                <span className="inline-flex items-center gap-1.5 text-xs font-black text-[#50007c] group-hover:text-orange-600 transition-colors bg-purple-50 group-hover:bg-orange-50 px-3 py-1.5 rounded-xl">
+                  <span>Explore Catalog</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
+                </span>
               </div>
             </motion.div>
           ))}

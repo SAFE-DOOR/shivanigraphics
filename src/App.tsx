@@ -13,6 +13,7 @@ import { TrackOrderPage } from './components/TrackOrderPage';
 import { HelpCenter } from './components/HelpCenter';
 import { Footer, PolicyRoute } from './components/Footer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
+import { PrepressAiAdvisorModal } from './components/PrepressAiAdvisorModal';
 import { CartModal } from './components/CartModal';
 import { BulkQuoteModal } from './components/BulkQuoteModal';
 import { playWelcomeVoiceGreeting, hasBeenGreeted, isVoiceMuted } from './utils/voiceGreeting';
@@ -25,7 +26,7 @@ import { RefundPolicyPage } from './components/pages/RefundPolicyPage';
 import { ArtworkGuidelinesPage } from './components/pages/ArtworkGuidelinesPage';
 import { ContactPage } from './components/pages/ContactPage';
 import { PaymentBillingPage } from './components/pages/PaymentBillingPage';
-import { AdminPanelModal } from './components/AdminPanelModal';
+import { AdminDashboardModal } from './components/AdminDashboardModal';
 
 export type AppView = 
   | 'home' 
@@ -63,14 +64,14 @@ export default function App() {
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isCartModalOpen, setIsCartModalOpen] = useState(false);
   const [isHelpCenterModalOpen, setIsHelpCenterModalOpen] = useState(false);
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
 
   // Sync view from hash / path on initial load and handle browser back/forward buttons
   useEffect(() => {
     const handleLocationChange = () => {
       const hash = window.location.hash.replace(/^#\/?/, '');
-      if (hash === 'owner-admin') {
-        setIsAdminModalOpen(true);
+      if (hash === 'admin-dashboard') {
+        setIsAdminDashboardOpen(true);
         return;
       }
       const validViews: AppView[] = [
@@ -99,6 +100,33 @@ export default function App() {
       window.removeEventListener('hashchange', handleLocationChange);
     };
   }, []);
+
+  // Dynamic SEO Document Title & Meta Description update
+  useEffect(() => {
+    let pageTitle = 'Shivani Graphics · Printo-Style Commercial Printing & Signage Delhi NCR';
+    let pageDesc = 'Premium digital printing, visiting cards, flex banners, 3D acrylic LED boards, wedding cards, stamps, and corporate merch in Mahavir Enclave, Delhi NCR.';
+
+    if (currentView === 'product' && activeProduct) {
+      pageTitle = `${activeProduct.title} | Shivani Graphics Delhi NCR`;
+      pageDesc = `${activeProduct.shortDescription} · Order online with instant WhatsApp proof & express 4-hr Delhi delivery.`;
+    } else if (currentView === 'category') {
+      const cat = CATEGORIES.find(c => c.id === selectedCategoryId);
+      pageTitle = `${cat ? cat.label : 'Print Catalog'} | Shivani Graphics`;
+      pageDesc = `Explore professional commercial printing & signage solutions in Delhi NCR.`;
+    } else if (currentView === 'about') {
+      pageTitle = 'About Shivani Graphics · Mahavir Enclave Press Delhi';
+    } else if (currentView === 'track') {
+      pageTitle = 'Track Print Order · Shivani Graphics';
+    } else if (currentView === 'help') {
+      pageTitle = 'Help & Prepress FAQ · Shivani Graphics';
+    }
+
+    document.title = pageTitle;
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', pageDesc);
+    }
+  }, [currentView, activeProduct, selectedCategoryId]);
 
   // Web Speech API Voice Greeting on First User Interaction (autoplay restriction compliant & once per session)
   useEffect(() => {
@@ -328,8 +356,9 @@ export default function App() {
         onNavigatePolicy={handlePolicyNavigate}
       />
 
-      {/* 6. Round Green Floating WhatsApp Button */}
+      {/* 6. Round Green Floating WhatsApp Button & Prepress AI Advisor */}
       <FloatingWhatsApp />
+      <PrepressAiAdvisorModal />
 
       {/* 7. Non-Disruptive Functional Utilities */}
       <CartModal
@@ -351,9 +380,9 @@ export default function App() {
         onClose={() => setIsBulkModalOpen(false)}
       />
 
-      <AdminPanelModal
-        isOpen={isAdminModalOpen}
-        onClose={() => setIsAdminModalOpen(false)}
+      <AdminDashboardModal
+        isOpen={isAdminDashboardOpen}
+        onClose={() => setIsAdminDashboardOpen(false)}
         products={products}
         onUpdateProducts={(updated) => setProducts(updated)}
       />
