@@ -27,7 +27,7 @@ import { ArtworkGuidelinesPage } from './components/pages/ArtworkGuidelinesPage'
 import { ContactPage } from './components/pages/ContactPage';
 import { PaymentBillingPage } from './components/pages/PaymentBillingPage';
 import { ProductsGalleryPage } from './components/pages/ProductsGalleryPage';
-import { AdminDashboardModal } from './components/AdminDashboardModal';
+import { MasterAdminPanel } from './components/MasterAdminPanel';
 import { db } from './firebase';
 import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 
@@ -427,7 +427,7 @@ export default function App() {
         onClose={() => setIsBulkModalOpen(false)}
       />
 
-      <AdminDashboardModal
+      <MasterAdminPanel
         isOpen={isAdminDashboardOpen}
         onClose={() => setIsAdminDashboardOpen(false)}
         products={products}
