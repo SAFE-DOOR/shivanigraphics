@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, ShieldCheck, Lock, Package, ShoppingBag, MessageSquare, Plus, Trash2, Edit3, Save, CheckCircle, RefreshCw, Image, Layout, Layers } from 'lucide-react';
-import { db, auth } from '../lib/firebase';
+import { db, auth } from '../firebase';
 import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
 import { ProductItem } from '../types';
@@ -53,12 +53,19 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
   const [editingBanner, setEditingBanner] = useState<any | null>(null);
   const [newProduct, setNewProduct] = useState<any | null>(null);
 
+  const ADMIN_WHITELIST = ['raimanish200822@gmail.com', 'admin@shivanigraphics.com'];
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setIsAuthenticated(true);
-        setUserEmail(user.email);
-        fetchCloudData();
+      if (user && user.email) {
+        if (ADMIN_WHITELIST.includes(user.email.toLowerCase()) || user.email.includes('admin')) {
+          setIsAuthenticated(true);
+          setUserEmail(user.email);
+          fetchCloudData();
+        } else {
+          setAuthError('Access denied: Email is not in authorized admin whitelist.');
+          signOut(auth);
+        }
       }
     });
     return () => unsubscribe();
@@ -68,7 +75,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
     e.preventDefault();
     if (passcode === '7860') {
       setIsAuthenticated(true);
-      setUserEmail('owner@shivanigraphics.com (Passcode Verified)');
+      setUserEmail('raimanish200822@gmail.com (Passcode Verified)');
       fetchCloudData();
     } else {
       alert('Incorrect Owner Passcode! Default is 7860');
@@ -80,15 +87,25 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
     setAuthError(null);
     try {
       const userCred = await signInWithEmailAndPassword(auth, email, password);
-      setIsAuthenticated(true);
-      setUserEmail(userCred.user.email);
-      fetchCloudData();
+      if (userCred.user.email && (ADMIN_WHITELIST.includes(userCred.user.email.toLowerCase()) || userCred.user.email.includes('admin'))) {
+        setIsAuthenticated(true);
+        setUserEmail(userCred.user.email);
+        fetchCloudData();
+      } else {
+        setAuthError('Unauthorized admin email.');
+        await signOut(auth);
+      }
     } catch (err: any) {
       try {
-        const newUserCred = await createUserWithEmailAndPassword(auth, email, password);
-        setIsAuthenticated(true);
-        setUserEmail(newUserCred.user.email);
-        fetchCloudData();
+        // If registering new admin
+        if (ADMIN_WHITELIST.includes(email.toLowerCase()) || email.includes('admin')) {
+          const newUserCred = await createUserWithEmailAndPassword(auth, email, password);
+          setIsAuthenticated(true);
+          setUserEmail(newUserCred.user.email);
+          fetchCloudData();
+        } else {
+          setAuthError('Only whitelisted admin emails can register/login.');
+        }
       } catch (regErr: any) {
         setAuthError(regErr.message || 'Authentication failed.');
       }
@@ -130,8 +147,8 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
     try {
       const updated = products.map(p => p.id === prod.id ? prod : p);
       onUpdateProducts(updated);
-      localStorage.setItem('shivanigraphics_custom_products', JSON.stringify(updated));
       
+      // Save to Firestore cloud database
       await setDoc(doc(db, 'products', prod.id), prod);
       setEditingProduct(null);
       alert('Product updated & saved to Firestore cloud successfully!');
@@ -181,7 +198,6 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
 
       const updated = [productObj, ...products];
       onUpdateProducts(updated);
-      localStorage.setItem('shivanigraphics_custom_products', JSON.stringify(updated));
       await setDoc(doc(db, 'products', id), productObj);
 
       setNewProduct(null);
@@ -197,9 +213,8 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
     try {
       const updated = products.filter(p => p.id !== id);
       onUpdateProducts(updated);
-      localStorage.setItem('shivanigraphics_custom_products', JSON.stringify(updated));
       await deleteDoc(doc(db, 'products', id));
-      alert('Product deleted successfully.');
+      alert('Product deleted successfully from cloud database.');
     } catch (e) {
       console.error('Error deleting product:', e);
     }

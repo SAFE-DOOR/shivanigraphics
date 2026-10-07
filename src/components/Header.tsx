@@ -35,6 +35,7 @@ interface HeaderProps {
   onNavigateHome: () => void;
   onNavigateTrack: () => void;
   onNavigateAbout: () => void;
+  onNavigateGallery: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -49,7 +50,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenHelpCenter,
   onNavigateHome,
   onNavigateTrack,
-  onNavigateAbout
+  onNavigateAbout,
+  onNavigateGallery
 }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -205,6 +207,14 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <MapPin className="w-3.5 h-3.5 text-purple-600" />
               <span>Store Location</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onNavigateGallery}
+              className="hidden sm:inline-block text-xs font-bold text-slate-700 hover:text-[#50007c] px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              Gallery
             </button>
 
             <button

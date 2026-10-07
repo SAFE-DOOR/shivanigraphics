@@ -26,8 +26,9 @@ import { RefundPolicyPage } from './components/pages/RefundPolicyPage';
 import { ArtworkGuidelinesPage } from './components/pages/ArtworkGuidelinesPage';
 import { ContactPage } from './components/pages/ContactPage';
 import { PaymentBillingPage } from './components/pages/PaymentBillingPage';
+import { ProductsGalleryPage } from './components/pages/ProductsGalleryPage';
 import { AdminDashboardModal } from './components/AdminDashboardModal';
-import { db } from './lib/firebase';
+import { db } from './firebase';
 import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 
 export type AppView = 
@@ -42,7 +43,8 @@ export type AppView =
   | 'refund-policy'
   | 'artwork-guidelines'
   | 'contact'
-  | 'payment-billing';
+  | 'payment-billing'
+  | 'gallery';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<AppView>('home');
@@ -97,7 +99,8 @@ export default function App() {
         'about', 
         'track', 
         'help',
-        'payment-billing'
+        'payment-billing',
+        'gallery'
       ];
       if (validViews.includes(hash as AppView)) {
         setCurrentView(hash as AppView);
@@ -221,6 +224,7 @@ export default function App() {
         onNavigateHome={() => navigateTo('home')}
         onNavigateTrack={() => navigateTo('track')}
         onNavigateAbout={() => navigateTo('about')}
+        onNavigateGallery={() => navigateTo('gallery')}
       />
 
       {/* 3. Mobile Slide-out Drawer */}
@@ -346,6 +350,35 @@ export default function App() {
             {currentView === 'track' && (
               <TrackOrderPage
                 onBackToHome={() => navigateTo('home')}
+              />
+            )}
+
+            {/* Products Gallery Page */}
+            {currentView === 'gallery' && (
+              <ProductsGalleryPage
+                products={products}
+                onBackToHome={() => navigateTo('home')}
+                onSelectProduct={handleSelectProduct}
+                onAddToCart={(product, qty) => {
+                  handleAddToCart({
+                    id: 'cart-' + Date.now(),
+                    productId: product.id,
+                    productTitle: product.title,
+                    config: {
+                      sizeId: product.config.sizes[0]?.id || 'standard',
+                      materialId: product.config.materials[0]?.id || 'standard',
+                      finishId: product.config.finishes[0]?.id || 'standard',
+                      sideId: product.config.sides[0]?.id || 'single',
+                      quantity: qty,
+                      hasArtwork: false
+                    },
+                    sizeLabel: product.config.sizes[0]?.name || 'Standard Size',
+                    materialLabel: product.config.materials[0]?.name || 'Standard Material',
+                    finishLabel: product.config.finishes[0]?.name || 'Standard Finish',
+                    sideLabel: product.config.sides[0]?.name || 'Single Sided',
+                    imageUrl: product.images[0]?.url || ''
+                  });
+                }}
               />
             )}
 
