@@ -27,6 +27,8 @@ import { ArtworkGuidelinesPage } from './components/pages/ArtworkGuidelinesPage'
 import { ContactPage } from './components/pages/ContactPage';
 import { PaymentBillingPage } from './components/pages/PaymentBillingPage';
 import { AdminDashboardModal } from './components/AdminDashboardModal';
+import { db } from './lib/firebase';
+import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 
 export type AppView = 
   | 'home' 
@@ -45,19 +47,31 @@ export type AppView =
 export default function App() {
   const [currentView, setCurrentView] = useState<AppView>('home');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
-  const [products, setProducts] = useState<ProductItem[]>(() => {
-    const saved = localStorage.getItem('shivanigraphics_custom_products');
-    if (saved) {
+  const [products, setProducts] = useState<ProductItem[]>(PRODUCTS);
+  const [activeProduct, setActiveProduct] = useState<ProductItem>(PRODUCTS[0]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+  // Fetch live products from Firebase Firestore on load
+  useEffect(() => {
+    async function loadCloudProducts() {
       try {
-        return JSON.parse(saved);
+        const querySnapshot = await getDocs(collection(db, 'products'));
+        if (!querySnapshot.empty) {
+          const cloudProducts = querySnapshot.docs.map(doc => doc.data() as ProductItem);
+          setProducts(cloudProducts);
+          setActiveProduct(cloudProducts[0]);
+        } else {
+          // Seed Firestore with default PRODUCTS if empty
+          for (const p of PRODUCTS) {
+            await setDoc(doc(db, 'products', p.id), p);
+          }
+        }
       } catch (e) {
-        return PRODUCTS;
+        console.error('Error loading cloud products:', e);
       }
     }
-    return PRODUCTS;
-  });
-  const [activeProduct, setActiveProduct] = useState<ProductItem>(products[0]);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+    loadCloudProducts();
+  }, []);
 
   // Modals state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
