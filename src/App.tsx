@@ -27,9 +27,11 @@ import { ArtworkGuidelinesPage } from './components/pages/ArtworkGuidelinesPage'
 import { ContactPage } from './components/pages/ContactPage';
 import { PaymentBillingPage } from './components/pages/PaymentBillingPage';
 import { ProductsGalleryPage } from './components/pages/ProductsGalleryPage';
-import { MasterAdminPanel } from './components/MasterAdminPanel';
-import { db } from './firebase';
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+
+// Admin Studio System
+import { AdminProvider, useAdmin } from './context/AdminContext';
+import { AdminLogin } from './admin/AdminLogin';
+import { AdminLayout } from './admin/AdminLayout';
 
 export type AppView = 
   | 'home' 
@@ -44,7 +46,16 @@ export type AppView =
   | 'artwork-guidelines'
   | 'contact'
   | 'payment-billing'
-  | 'gallery';
+  | 'gallery'
+  | 'admin';
+
+function AdminRouter({ onBackToWebsite }: { onBackToWebsite: () => void }) {
+  const { isAdminLoggedIn } = useAdmin();
+  if (!isAdminLoggedIn) {
+    return <AdminLogin onBackToWebsite={onBackToWebsite} />;
+  }
+  return <AdminLayout onBackToWebsite={onBackToWebsite} />;
+}
 
 export default function App() {
   const [currentView, setCurrentView] = useState<AppView>('home');
@@ -53,41 +64,18 @@ export default function App() {
   const [activeProduct, setActiveProduct] = useState<ProductItem>(PRODUCTS[0]);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
-  // Fetch live products from Firebase Firestore on load
-  useEffect(() => {
-    async function loadCloudProducts() {
-      try {
-        const querySnapshot = await getDocs(collection(db, 'products'));
-        if (!querySnapshot.empty) {
-          const cloudProducts = querySnapshot.docs.map(doc => doc.data() as ProductItem);
-          setProducts(cloudProducts);
-          setActiveProduct(cloudProducts[0]);
-        } else {
-          // Seed Firestore with default PRODUCTS if empty
-          for (const p of PRODUCTS) {
-            await setDoc(doc(db, 'products', p.id), p);
-          }
-        }
-      } catch (e) {
-        console.error('Error loading cloud products:', e);
-      }
-    }
-    loadCloudProducts();
-  }, []);
-
   // Modals state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isCartModalOpen, setIsCartModalOpen] = useState(false);
   const [isHelpCenterModalOpen, setIsHelpCenterModalOpen] = useState(false);
-  const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
 
   // Sync view from hash / path on initial load and handle browser back/forward buttons
   useEffect(() => {
     const handleLocationChange = () => {
       const hash = window.location.hash.replace(/^#\/?/, '');
-      if (hash === 'admin-dashboard') {
-        setIsAdminDashboardOpen(true);
+      if (hash === 'admin' || hash.startsWith('admin/')) {
+        setCurrentView('admin');
         return;
       }
       const validViews: AppView[] = [
@@ -100,12 +88,11 @@ export default function App() {
         'track', 
         'help',
         'payment-billing',
-        'gallery'
+        'gallery',
+        'admin'
       ];
       if (validViews.includes(hash as AppView)) {
         setCurrentView(hash as AppView);
-      } else if (!hash) {
-        // default view remains if not navigating back to root
       }
     };
 
@@ -117,33 +104,6 @@ export default function App() {
       window.removeEventListener('hashchange', handleLocationChange);
     };
   }, []);
-
-  // Dynamic SEO Document Title & Meta Description update
-  useEffect(() => {
-    let pageTitle = 'Shivani Graphics · Printo-Style Commercial Printing & Signage Delhi NCR';
-    let pageDesc = 'Premium digital printing, visiting cards, flex banners, 3D acrylic LED boards, wedding cards, stamps, and corporate merch in Mahavir Enclave, Delhi NCR.';
-
-    if (currentView === 'product' && activeProduct) {
-      pageTitle = `${activeProduct.title} | Shivani Graphics Delhi NCR`;
-      pageDesc = `${activeProduct.shortDescription} · Order online with instant WhatsApp proof & express 4-hr Delhi delivery.`;
-    } else if (currentView === 'category') {
-      const cat = CATEGORIES.find(c => c.id === selectedCategoryId);
-      pageTitle = `${cat ? cat.label : 'Print Catalog'} | Shivani Graphics`;
-      pageDesc = `Explore professional commercial printing & signage solutions in Delhi NCR.`;
-    } else if (currentView === 'about') {
-      pageTitle = 'About Shivani Graphics · Mahavir Enclave Press Delhi';
-    } else if (currentView === 'track') {
-      pageTitle = 'Track Print Order · Shivani Graphics';
-    } else if (currentView === 'help') {
-      pageTitle = 'Help & Prepress FAQ · Shivani Graphics';
-    }
-
-    document.title = pageTitle;
-    const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) {
-      metaDesc.setAttribute('content', pageDesc);
-    }
-  }, [currentView, activeProduct, selectedCategoryId]);
 
   // Web Speech API Voice Greeting on First User Interaction (autoplay restriction compliant & once per session)
   useEffect(() => {
@@ -194,246 +154,186 @@ export default function App() {
     setCurrentView(view);
     if (view === 'home') {
       window.history.pushState(null, '', window.location.pathname);
+      window.location.hash = '';
     } else {
-      window.history.pushState(null, '', `#/${view}`);
+      window.location.hash = `#/${view}`;
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handlePolicyNavigate = (route: PolicyRoute) => {
-    navigateTo(route as AppView);
+  const handlePolicyNavigate = (policyRoute: PolicyRoute) => {
+    navigateTo(policyRoute as AppView);
   };
 
+  if (currentView === 'admin') {
+    return (
+      <AdminProvider>
+        <AdminRouter onBackToWebsite={() => navigateTo('home')} />
+      </AdminProvider>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex flex-col bg-white text-slate-900 selection:bg-[#50007c] selection:text-white">
-      
-      {/* 1. Top Purple Announcement Bar */}
-      <TopBanner />
+    <AdminProvider>
+      <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 selection:bg-purple-600 selection:text-white">
+        
+        {/* 1. Top Brand Announcement Banner */}
+        <TopBanner />
 
-      {/* 2. Main Printo-Style Navigation Header */}
-      <Header
-        products={products}
-        selectedCategoryId={selectedCategoryId}
-        onSelectProduct={handleSelectProduct}
-        onSelectCategory={handleSelectCategory}
-        onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
-        cartCount={cartItems.length}
-        onOpenCartModal={() => setIsCartModalOpen(true)}
-        onOpenStoreModal={() => navigateTo('contact')}
-        onOpenHelpCenter={() => setIsHelpCenterModalOpen(true)}
-        onNavigateHome={() => navigateTo('home')}
-        onNavigateTrack={() => navigateTo('track')}
-        onNavigateAbout={() => navigateTo('about')}
-        onNavigateGallery={() => navigateTo('gallery')}
-      />
+        {/* 2. Main Printo-Style Navigation Header */}
+        <Header
+          products={products}
+          selectedCategoryId={selectedCategoryId}
+          onSelectProduct={handleSelectProduct}
+          onSelectCategory={handleSelectCategory}
+          onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+          cartCount={cartItems.length}
+          onOpenCartModal={() => setIsCartModalOpen(true)}
+          onOpenStoreModal={() => navigateTo('contact')}
+          onOpenHelpCenter={() => navigateTo('help')}
+          onNavigateHome={() => navigateTo('home')}
+          onNavigateTrack={() => navigateTo('track')}
+          onNavigateAbout={() => navigateTo('about')}
+          onNavigateGallery={() => navigateTo('gallery')}
+        />
 
-      {/* 3. Mobile Slide-out Drawer */}
-      <MobileDrawer
-        isOpen={isMobileMenuOpen}
-        onClose={() => setIsMobileMenuOpen(false)}
-        selectedCategory={selectedCategoryId}
-        onSelectCategory={handleSelectCategory}
-        products={products}
-        onSelectProduct={handleSelectProduct}
-        onOpenStoreModal={() => navigateTo('contact')}
-        onOpenHelpCenter={() => setIsHelpCenterModalOpen(true)}
-        onNavigateHome={() => navigateTo('home')}
-        onNavigateTrack={() => navigateTo('track')}
-        onNavigateAbout={() => navigateTo('about')}
-        onNavigatePolicy={handlePolicyNavigate}
-      />
+        {/* Mobile Drawer Menu */}
+        <MobileDrawer
+          isOpen={isMobileMenuOpen}
+          onClose={() => setIsMobileMenuOpen(false)}
+          selectedCategory={selectedCategoryId}
+          onSelectCategory={handleSelectCategory}
+          products={products}
+          onSelectProduct={handleSelectProduct}
+          onOpenStoreModal={() => navigateTo('contact')}
+          onOpenHelpCenter={() => navigateTo('help')}
+          onNavigateHome={() => navigateTo('home')}
+          onNavigateTrack={() => navigateTo('track')}
+          onNavigateAbout={() => navigateTo('about')}
+          onNavigatePolicy={handlePolicyNavigate}
+        />
 
-      {/* 4. Active View Rendering with Framer Motion Slide-Up Page Transitions */}
-      <main className="flex-1 overflow-x-hidden">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={
-              currentView === 'product'
-                ? `product-${activeProduct.id}`
-                : currentView === 'category'
-                ? `category-${selectedCategoryId}`
-                : currentView
-            }
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -14 }}
-            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full flex-1"
-          >
-            {/* Home Feed */}
-            {currentView === 'home' && (
-              <PrintoHomeFeed
-                products={products}
-                onSelectProduct={handleSelectProduct}
-                onSelectCategory={handleSelectCategory}
-                onOpenBulkModal={() => setIsBulkModalOpen(true)}
-                onOpenStoreModal={() => navigateTo('contact')}
-                onOpenArtworkGuide={() => navigateTo('artwork-guidelines')}
-              />
-            )}
+        {/* 3. Main Dynamic Content Router */}
+        <main className="flex-1">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentView}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2 }}
+            >
+              {currentView === 'home' && (
+                <PrintoHomeFeed
+                  products={products}
+                  onSelectProduct={handleSelectProduct}
+                  onSelectCategory={handleSelectCategory}
+                  onOpenBulkModal={() => setIsBulkModalOpen(true)}
+                />
+              )}
 
-            {/* Product Detail Subpage */}
-            {currentView === 'product' && (
-              <ProductDetailPage
-                product={activeProduct}
-                allProducts={products}
-                onBack={() => navigateTo('home')}
-                onSelectProduct={handleSelectProduct}
-                onAddToCart={handleAddToCart}
-                onOpenArtworkGuide={() => navigateTo('artwork-guidelines')}
-              />
-            )}
+              {currentView === 'product' && activeProduct && (
+                <ProductDetailPage
+                  product={activeProduct}
+                  allProducts={products}
+                  onBack={() => navigateTo('home')}
+                  onSelectProduct={handleSelectProduct}
+                  onAddToCart={handleAddToCart}
+                  onOpenArtworkGuide={() => navigateTo('artwork-guidelines')}
+                />
+              )}
 
-            {/* Category Subpage */}
-            {currentView === 'category' && (
-              <CategoryPage
-                categoryId={selectedCategoryId}
-                products={products}
-                onSelectProduct={handleSelectProduct}
-                onSelectCategory={handleSelectCategory}
-                onBackToHome={() => navigateTo('home')}
-              />
-            )}
+              {currentView === 'category' && (
+                <CategoryPage
+                  categoryId={selectedCategoryId}
+                  products={products}
+                  onSelectProduct={handleSelectProduct}
+                  onSelectCategory={handleSelectCategory}
+                  onBackToHome={() => navigateTo('home')}
+                />
+              )}
 
-            {/* Dedicated Sub-Page 1: Terms of Service & 4-Hour Delivery */}
-            {currentView === 'terms' && (
-              <TermsPage
-                onBackToHome={() => navigateTo('home')}
-                onNavigateContact={() => navigateTo('contact')}
-              />
-            )}
+              {currentView === 'terms' && <TermsPage onBackToHome={() => navigateTo('home')} onNavigateContact={() => navigateTo('contact')} />}
+              {currentView === 'privacy' && <PrivacyPage onBackToHome={() => navigateTo('home')} />}
+              {currentView === 'refund-policy' && <RefundPolicyPage onBackToHome={() => navigateTo('home')} />}
+              {currentView === 'artwork-guidelines' && <ArtworkGuidelinesPage onBackToHome={() => navigateTo('home')} />}
+              {currentView === 'contact' && <ContactPage onBackToHome={() => navigateTo('home')} />}
+              {currentView === 'payment-billing' && <PaymentBillingPage onBackToHome={() => navigateTo('home')} />}
+              {currentView === 'about' && <AboutUsPage onBackToHome={() => navigateTo('home')} onExploreCatalog={() => navigateTo('home')} />}
+              {currentView === 'track' && <TrackOrderPage onBackToHome={() => navigateTo('home')} />}
+              {currentView === 'gallery' && (
+                <ProductsGalleryPage
+                  products={products}
+                  onBackToHome={() => navigateTo('home')}
+                  onSelectProduct={handleSelectProduct}
+                  onAddToCart={(product, qty) => {
+                    handleAddToCart({
+                      id: 'cart-' + Date.now(),
+                      productId: product.id,
+                      productTitle: product.title,
+                      config: {
+                        sizeId: product.config.sizes[0]?.id || 'standard',
+                        materialId: product.config.materials[0]?.id || 'standard',
+                        finishId: product.config.finishes[0]?.id || 'standard',
+                        sideId: product.config.sides[0]?.id || 'single',
+                        quantity: qty,
+                        hasArtwork: false
+                      },
+                      sizeLabel: product.config.sizes[0]?.name || 'Standard Size',
+                      materialLabel: product.config.materials[0]?.name || 'Standard Material',
+                      finishLabel: product.config.finishes[0]?.name || 'Standard Finish',
+                      sideLabel: product.config.sides[0]?.name || 'Single Sided',
+                      imageUrl: product.images[0]?.url || ''
+                    });
+                  }}
+                />
+              )}
+              {currentView === 'help' && (
+                <div className="py-8">
+                  <HelpCenter isModal={false} />
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </main>
 
-            {/* Dedicated Sub-Page 2: Privacy Policy & Artwork Non-Disclosure */}
-            {currentView === 'privacy' && (
-              <PrivacyPage
-                onBackToHome={() => navigateTo('home')}
-              />
-            )}
+        {/* 5. Printo-Style Footer */}
+        <Footer
+          onSelectCategory={handleSelectCategory}
+          onOpenStoreModal={() => navigateTo('contact')}
+          onOpenHelpCenter={() => navigateTo('help')}
+          onOpenBulkModal={() => setIsBulkModalOpen(true)}
+          onNavigateAbout={() => navigateTo('about')}
+          onNavigateTrack={() => navigateTo('track')}
+          onNavigatePolicy={handlePolicyNavigate}
+          onOpenAdminModal={() => navigateTo('admin')}
+        />
 
-            {/* Dedicated Sub-Page 3: Cancellation & 100% Free Reprint / Refund */}
-            {currentView === 'refund-policy' && (
-              <RefundPolicyPage
-                onBackToHome={() => navigateTo('home')}
-              />
-            )}
+        {/* 6. Round Green Floating WhatsApp Button & Prepress AI Advisor */}
+        <FloatingWhatsApp />
+        <PrepressAiAdvisorModal />
 
-            {/* Dedicated Sub-Page 4: Prepress & Artwork Guidelines */}
-            {currentView === 'artwork-guidelines' && (
-              <ArtworkGuidelinesPage
-                onBackToHome={() => navigateTo('home')}
-              />
-            )}
+        {/* 7. Non-Disruptive Functional Utilities */}
+        <CartModal
+          isOpen={isCartModalOpen}
+          onClose={() => setIsCartModalOpen(false)}
+          items={cartItems}
+          onRemoveItem={handleRemoveCartItem}
+          onClearCart={handleClearCart}
+        />
 
-            {/* Dedicated Sub-Page 5: Contact Us & Store Facility Location */}
-            {currentView === 'contact' && (
-              <ContactPage
-                onBackToHome={() => navigateTo('home')}
-              />
-            )}
+        <HelpCenter
+          isModal={true}
+          isOpen={isHelpCenterModalOpen}
+          onClose={() => setIsHelpCenterModalOpen(false)}
+        />
 
-            {/* Dedicated Sub-Page 6: Payment & Billing (UPI) */}
-            {currentView === 'payment-billing' && (
-              <PaymentBillingPage
-                onBackToHome={() => navigateTo('home')}
-              />
-            )}
+        <BulkQuoteModal
+          isOpen={isBulkModalOpen}
+          onClose={() => setIsBulkModalOpen(false)}
+        />
 
-            {/* About Us Page */}
-            {currentView === 'about' && (
-              <AboutUsPage
-                onBackToHome={() => navigateTo('home')}
-                onExploreCatalog={() => navigateTo('home')}
-              />
-            )}
-
-            {/* Track Order Page */}
-            {currentView === 'track' && (
-              <TrackOrderPage
-                onBackToHome={() => navigateTo('home')}
-              />
-            )}
-
-            {/* Products Gallery Page */}
-            {currentView === 'gallery' && (
-              <ProductsGalleryPage
-                products={products}
-                onBackToHome={() => navigateTo('home')}
-                onSelectProduct={handleSelectProduct}
-                onAddToCart={(product, qty) => {
-                  handleAddToCart({
-                    id: 'cart-' + Date.now(),
-                    productId: product.id,
-                    productTitle: product.title,
-                    config: {
-                      sizeId: product.config.sizes[0]?.id || 'standard',
-                      materialId: product.config.materials[0]?.id || 'standard',
-                      finishId: product.config.finishes[0]?.id || 'standard',
-                      sideId: product.config.sides[0]?.id || 'single',
-                      quantity: qty,
-                      hasArtwork: false
-                    },
-                    sizeLabel: product.config.sizes[0]?.name || 'Standard Size',
-                    materialLabel: product.config.materials[0]?.name || 'Standard Material',
-                    finishLabel: product.config.finishes[0]?.name || 'Standard Finish',
-                    sideLabel: product.config.sides[0]?.name || 'Single Sided',
-                    imageUrl: product.images[0]?.url || ''
-                  });
-                }}
-              />
-            )}
-
-            {/* Help Center Full Page */}
-            {currentView === 'help' && (
-              <div className="py-8">
-                <HelpCenter isModal={false} />
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </main>
-
-      {/* 5. Printo-Style Footer with Dedicated Sub-Page Policy Routing */}
-      <Footer
-        onSelectCategory={handleSelectCategory}
-        onOpenStoreModal={() => navigateTo('contact')}
-        onOpenHelpCenter={() => navigateTo('help')}
-        onOpenBulkModal={() => setIsBulkModalOpen(true)}
-        onNavigateAbout={() => navigateTo('about')}
-        onNavigateTrack={() => navigateTo('track')}
-        onNavigatePolicy={handlePolicyNavigate}
-      />
-
-      {/* 6. Round Green Floating WhatsApp Button & Prepress AI Advisor */}
-      <FloatingWhatsApp />
-      <PrepressAiAdvisorModal />
-
-      {/* 7. Non-Disruptive Functional Utilities */}
-      <CartModal
-        isOpen={isCartModalOpen}
-        onClose={() => setIsCartModalOpen(false)}
-        items={cartItems}
-        onRemoveItem={handleRemoveCartItem}
-        onClearCart={handleClearCart}
-      />
-
-      <HelpCenter
-        isModal={true}
-        isOpen={isHelpCenterModalOpen}
-        onClose={() => setIsHelpCenterModalOpen(false)}
-      />
-
-      <BulkQuoteModal
-        isOpen={isBulkModalOpen}
-        onClose={() => setIsBulkModalOpen(false)}
-      />
-
-      <MasterAdminPanel
-        isOpen={isAdminDashboardOpen}
-        onClose={() => setIsAdminDashboardOpen(false)}
-        products={products}
-        onUpdateProducts={(updated) => setProducts(updated)}
-      />
-
-    </div>
+      </div>
+    </AdminProvider>
   );
 }
