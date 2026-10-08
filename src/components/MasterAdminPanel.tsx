@@ -2,23 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, ShieldCheck, Lock, Package, Layout, Layers, MessageSquare, 
   Plus, Trash2, Edit3, Save, CheckCircle, RefreshCw, Image, Upload, Eye, AlertCircle, Check, ToggleLeft, ToggleRight,
-  TrendingUp, ShoppingBag, Users, DollarSign, Star, FileText, Settings, LogOut, Search, Filter, ArrowUpRight
+  TrendingUp, ShoppingBag, Users, DollarSign, Star, FileText, Settings, LogOut, Search, Filter, ArrowUpRight, FolderOpen
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { db } from '../firebase';
 import { 
-  collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimestamp 
+  collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc 
 } from 'firebase/firestore';
 import { PRODUCTS, CATEGORIES } from '../data/products';
 import { ProductItem } from '../types';
-import { uploadProductImage, deleteProductImage } from '../utils/firebaseStorage';
 
 interface MasterAdminPanelProps {
   onClose: () => void;
 }
 
 export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'products' | 'banners' | 'icons' | 'reviews' | 'inquiries'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'products' | 'banners' | 'categories' | 'reviews' | 'inquiries'>('dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
@@ -27,7 +26,7 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
   // Firestore data states
   const [dbProducts, setDbProducts] = useState<any[]>([]);
   const [dbBanners, setDbBanners] = useState<any[]>([]);
-  const [dbIcons, setDbIcons] = useState<any[]>([]);
+  const [dbCategories, setDbCategories] = useState<any[]>([]);
   const [dbOrders, setDbOrders] = useState<any[]>([]);
   const [dbReviews, setDbReviews] = useState<any[]>([]);
   const [dbInquiries, setDbInquiries] = useState<any[]>([]);
@@ -39,6 +38,9 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
   
   const [editingBanner, setEditingBanner] = useState<any | null>(null);
   const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
+
+  const [editingCategory, setEditingCategory] = useState<any | null>(null);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
   // Fetch collections on auth success
   useEffect(() => {
@@ -61,11 +63,36 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
       setDbBanners(list);
     }, (err) => console.error("Banners error:", err));
 
-    // Fetch Quick Icons
-    const unsubIcons = onSnapshot(collection(db, 'quick_icons'), (snapshot) => {
+    // Fetch Categories
+    const unsubCategories = onSnapshot(collection(db, 'categories'), (snapshot) => {
       const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setDbIcons(list);
-    }, (err) => console.error("Icons error:", err));
+      setDbCategories(list.length > 0 ? list : [
+        {
+          id: 'paper-documents',
+          title: 'Paper & Document Printing',
+          subtitle: 'Visiting cards, letterheads, spiral notebooks, bill books, envelopes, certificates & flyers.',
+          itemCount: 8,
+          image: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=800&q=80',
+          badge: '⚡ 5 Mins Pickup'
+        },
+        {
+          id: 'signage-vinyl',
+          title: 'Signage, Flex & Vinyl Banners',
+          subtitle: 'Outdoor flex banners, star flex, vinyl stickers, one-way vision film & ACP acrylic glow signs.',
+          itemCount: 6,
+          image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80',
+          badge: '⚡ Same Day Ready'
+        },
+        {
+          id: 'custom-promotional',
+          title: 'Custom Gifts & Promotional Merch',
+          subtitle: 'Sublimation coffee mugs, magic mugs, sippers, photo frames, keychains & badges.',
+          itemCount: 6,
+          image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80',
+          badge: '⚡ 10 Mins Ready'
+        }
+      ]);
+    }, (err) => console.error("Categories error:", err));
 
     // Fetch Orders
     const unsubOrders = onSnapshot(collection(db, 'orders'), (snapshot) => {
@@ -88,7 +115,7 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
     return () => {
       unsubProducts();
       unsubBanners();
-      unsubIcons();
+      unsubCategories();
       unsubOrders();
       unsubReviews();
       unsubInquiries();
@@ -116,12 +143,14 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
           title: p.title,
           category: p.category,
           minPrice: p.minPrice || 499,
-          rating: p.rating,
-          reviewCount: p.reviewCount,
-          images: p.images,
+          rating: p.rating || 4.9,
+          reviewCount: p.reviewCount || 120,
+          images: p.images || [{ url: (p as any).image }],
           badge: p.badge || '⚡ 5-Minute Store Pickup',
-          subtitle: p.subtitle,
-          minQty: 10,
+          subtitle: p.subtitle || (p as any).description,
+          detailedDescription: p.detailedDescription || (p as any).description,
+          specs: p.specs || [],
+          minQty: (p as any).minQty || 10,
           active: true,
           createdAt: serverTimestamp()
         });
@@ -132,6 +161,103 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
       alert('Error seeding data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Save Product Handler
+  const handleSaveProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+    try {
+      const productPayload = {
+        title: editingProduct.title || 'Untitled Product',
+        category: editingProduct.category || 'paper-documents',
+        minPrice: Number(editingProduct.minPrice) || 499,
+        badge: editingProduct.badge || '⚡ 5-Minute Store Pickup',
+        subtitle: editingProduct.subtitle || '',
+        detailedDescription: editingProduct.detailedDescription || '',
+        images: editingProduct.images?.length > 0 ? editingProduct.images : [{ url: editingProduct.imageUrl || 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f' }],
+        minQty: Number(editingProduct.minQty) || 10,
+        active: true,
+        updatedAt: serverTimestamp()
+      };
+
+      if (editingProduct.id) {
+        await updateDoc(doc(db, 'products', editingProduct.id), productPayload);
+      } else {
+        await addDoc(collection(db, 'products'), {
+          ...productPayload,
+          createdAt: serverTimestamp()
+        });
+      }
+      setIsProductModalOpen(false);
+      setEditingProduct(null);
+      alert('Product saved successfully to Firebase!');
+    } catch (err) {
+      console.error("Error saving product:", err);
+      alert('Failed to save product.');
+    }
+  };
+
+  // Save Banner Handler
+  const handleSaveBanner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBanner) return;
+    try {
+      const bannerPayload = {
+        title: editingBanner.title || 'Banner Title',
+        subtitle: editingBanner.subtitle || '',
+        image: editingBanner.image || 'https://images.unsplash.com/photo-1593062096033-9a26b09da705',
+        badge: editingBanner.badge || '⚡ Express',
+        ctaText: editingBanner.ctaText || 'Explore',
+        active: true,
+        updatedAt: serverTimestamp()
+      };
+
+      if (editingBanner.id) {
+        await updateDoc(doc(db, 'banners', editingBanner.id), bannerPayload);
+      } else {
+        await addDoc(collection(db, 'banners'), {
+          ...bannerPayload,
+          createdAt: serverTimestamp()
+        });
+      }
+      setIsBannerModalOpen(false);
+      setEditingBanner(null);
+      alert('Banner saved successfully!');
+    } catch (err) {
+      console.error("Error saving banner:", err);
+      alert('Failed to save banner.');
+    }
+  };
+
+  // Save Category Card Handler
+  const handleSaveCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCategory) return;
+    try {
+      const catPayload = {
+        title: editingCategory.title || 'Category Title',
+        subtitle: editingCategory.subtitle || '',
+        image: editingCategory.image || 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f',
+        badge: editingCategory.badge || '⚡ Popular',
+        itemCount: Number(editingCategory.itemCount) || 8,
+        updatedAt: serverTimestamp()
+      };
+
+      if (editingCategory.firebaseId) {
+        await updateDoc(doc(db, 'categories', editingCategory.firebaseId), catPayload);
+      } else if (editingCategory.id) {
+        await setDoc(doc(db, 'categories', editingCategory.id), catPayload, { merge: true });
+      } else {
+        await addDoc(collection(db, 'categories'), catPayload);
+      }
+      setIsCategoryModalOpen(false);
+      setEditingCategory(null);
+      alert('Category card saved successfully!');
+    } catch (err) {
+      console.error("Error saving category:", err);
+      alert('Failed to save category.');
     }
   };
 
@@ -260,11 +386,11 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
           </button>
 
           <button 
-            onClick={() => setActiveTab('icons')}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'icons' ? 'bg-white text-[#50007c] shadow-md' : 'text-purple-200 hover:bg-purple-900/50'}`}
+            onClick={() => setActiveTab('categories')}
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'categories' ? 'bg-white text-[#50007c] shadow-md' : 'text-purple-200 hover:bg-purple-900/50'}`}
           >
-            <Layers className="w-4 h-4" />
-            <span>Quick Icons ({dbIcons.length})</span>
+            <FolderOpen className="w-4 h-4" />
+            <span>Category Cards ({dbCategories.length})</span>
           </button>
 
           <button 
@@ -320,7 +446,7 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all"
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
             >
               Exit to Website
             </button>
@@ -383,12 +509,12 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
               <div className="p-6 border-b border-slate-200 flex items-center justify-between">
                 <div>
                   <h3 className="font-black text-slate-900 text-base">All Products ({dbProducts.length})</h3>
-                  <p className="text-xs text-slate-500">Manage pricing, pickup badges, and catalog items</p>
+                  <p className="text-xs text-slate-500">Manage pricing, pickup badges, and catalog items in real-time</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => {
-                    setEditingProduct({ title: '', category: 'paper-documents', minPrice: 499, badge: '⚡ 5-Minute Store Pickup', subtitle: '', images: [{ url: '' }], minQty: 10 });
+                    setEditingProduct({ title: '', category: 'paper-documents', minPrice: 499, badge: '⚡ 5-Minute Store Pickup', subtitle: '', detailedDescription: '', images: [{ url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f' }], minQty: 10 });
                     setIsProductModalOpen(true);
                   }}
                   className="px-4 py-2.5 bg-[#50007c] hover:bg-[#3e0061] text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 cursor-pointer"
@@ -430,7 +556,7 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
                               setEditingProduct(p);
                               setIsProductModalOpen(true);
                             }}
-                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700"
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
@@ -441,7 +567,7 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
                                 if (p.id) await deleteDoc(doc(db, 'products', p.id));
                               }
                             }}
-                            className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600"
+                            className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -450,6 +576,115 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'categories' && (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden space-y-4">
+              <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                  <h3 className="font-black text-slate-900 text-base">Category Cards ({dbCategories.length})</h3>
+                  <p className="text-xs text-slate-500">Manage homepage category cards, photos, and department banners</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingCategory({ title: '', subtitle: '', image: '', badge: '⚡ Popular', itemCount: 8 });
+                    setIsCategoryModalOpen(true);
+                  }}
+                  className="px-4 py-2.5 bg-[#50007c] hover:bg-[#3e0061] text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Category Card</span>
+                </button>
+              </div>
+
+              <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                {dbCategories.map((cat, idx) => (
+                  <div key={cat.id || idx} className="p-4 border border-slate-200 rounded-2xl bg-slate-50 space-y-3">
+                    <img src={cat.image} alt={cat.title} className="w-full h-36 object-cover rounded-xl" />
+                    <div>
+                      <span className="text-[10px] font-black uppercase bg-purple-100 text-[#50007c] px-2 py-0.5 rounded-md">{cat.badge}</span>
+                      <h4 className="font-bold text-slate-900 text-sm mt-1">{cat.title}</h4>
+                      <p className="text-xs text-slate-600 mt-1 line-clamp-2">{cat.subtitle}</p>
+                    </div>
+                    <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
+                      <span className="text-slate-500 font-semibold">{cat.itemCount || 8} Products</span>
+                      <div className="space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingCategory({ ...cat, firebaseId: cat.id });
+                            setIsCategoryModalOpen(true);
+                          }}
+                          className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-lg cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'banners' && (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden space-y-4">
+              <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                  <h3 className="font-black text-slate-900 text-base">Website Banners ({dbBanners.length})</h3>
+                  <p className="text-xs text-slate-500">Manage hero carousel banners and promotional graphics</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingBanner({ title: '', subtitle: '', image: '', badge: '⚡ Hero', ctaText: 'Explore' });
+                    setIsBannerModalOpen(true);
+                  }}
+                  className="px-4 py-2.5 bg-[#50007c] hover:bg-[#3e0061] text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Banner</span>
+                </button>
+              </div>
+
+              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {dbBanners.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic">No custom banners in Firestore yet. Default system banners are currently active.</p>
+                ) : (
+                  dbBanners.map((b, idx) => (
+                    <div key={b.id || idx} className="p-4 border rounded-2xl space-y-2 bg-slate-50">
+                      <img src={b.image} alt={b.title} className="w-full h-32 object-cover rounded-xl" />
+                      <h4 className="font-bold text-slate-900 text-sm">{b.title}</h4>
+                      <p className="text-xs text-slate-500">{b.subtitle}</p>
+                      <div className="pt-2 flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingBanner(b);
+                            setIsBannerModalOpen(true);
+                          }}
+                          className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold rounded-lg cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (confirm('Delete this banner?') && b.id) {
+                              await deleteDoc(doc(db, 'banners', b.id));
+                            }
+                          }}
+                          className="px-3 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-bold rounded-lg cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -483,7 +718,7 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
                           onClick={async () => {
                             if (rev.id) await deleteDoc(doc(db, 'reviews', rev.id));
                           }}
-                          className="text-rose-600 hover:underline font-bold"
+                          className="text-rose-600 hover:underline font-bold cursor-pointer"
                         >
                           Delete
                         </button>
@@ -523,24 +758,6 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
             </div>
           )}
 
-          {activeTab === 'banners' && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden space-y-4">
-              <div className="p-6 border-b border-slate-200">
-                <h3 className="font-black text-slate-900 text-base">Website Banners ({dbBanners.length})</h3>
-                <p className="text-xs text-slate-500">Manage hero banners and top announcements</p>
-              </div>
-              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                {dbBanners.map((b, idx) => (
-                  <div key={b.id || idx} className="p-4 border rounded-xl space-y-2">
-                    <img src={b.image} alt={b.title} className="w-full h-32 object-cover rounded-lg" />
-                    <h4 className="font-bold text-slate-900">{b.title}</h4>
-                    <p className="text-xs text-slate-500">{b.subtitle}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {activeTab === 'inquiries' && (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden space-y-4">
               <div className="p-6 border-b border-slate-200">
@@ -554,6 +771,117 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
           )}
         </div>
       </main>
+
+      {/* PRODUCT EDIT / ADD MODAL */}
+      {isProductModalOpen && editingProduct && (
+        <div className="fixed inset-0 z-60 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button onClick={() => setIsProductModalOpen(false)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-lg font-black text-slate-900 mb-4">{editingProduct.id ? 'Edit Product' : 'Add New Product'}</h3>
+            <form onSubmit={handleSaveProduct} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Product Title</label>
+                <input type="text" value={editingProduct.title} onChange={e => setEditingProduct({...editingProduct, title: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" required />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Category</label>
+                  <select value={editingProduct.category} onChange={e => setEditingProduct({...editingProduct, category: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl">
+                    <option value="paper-documents">Paper & Documents</option>
+                    <option value="signage-vinyl">Signage & Flex</option>
+                    <option value="custom-promotional">Custom Merch & Mugs</option>
+                    <option value="apparel-uniforms">Apparel & Uniforms</option>
+                    <option value="stamps-rubber">Stamps & Badges</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Base Price (₹)</label>
+                  <input type="number" value={editingProduct.minPrice} onChange={e => setEditingProduct({...editingProduct, minPrice: Number(e.target.value)})} className="w-full p-2.5 bg-slate-50 border rounded-xl" required />
+                </div>
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Pickup Badge</label>
+                <input type="text" value={editingProduct.badge} onChange={e => setEditingProduct({...editingProduct, badge: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Image URL</label>
+                <input type="url" value={editingProduct.images?.[0]?.url || editingProduct.imageUrl || ''} onChange={e => setEditingProduct({...editingProduct, images: [{ url: e.target.value }]})} className="w-full p-2.5 bg-slate-50 border rounded-xl" placeholder="https://..." required />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Detailed Description</label>
+                <textarea rows={3} value={editingProduct.detailedDescription || ''} onChange={e => setEditingProduct({...editingProduct, detailedDescription: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" />
+              </div>
+              <button type="submit" className="w-full py-3 bg-[#50007c] text-white font-black rounded-xl cursor-pointer shadow-md">
+                Save Product to Firebase
+              </button>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* BANNER EDIT / ADD MODAL */}
+      {isBannerModalOpen && editingBanner && (
+        <div className="fixed inset-0 z-60 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button onClick={() => setIsBannerModalOpen(false)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-lg font-black text-slate-900 mb-4">{editingBanner.id ? 'Edit Banner' : 'Add Website Banner'}</h3>
+            <form onSubmit={handleSaveBanner} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Banner Title</label>
+                <input type="text" value={editingBanner.title} onChange={e => setEditingBanner({...editingBanner, title: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" required />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Subtitle</label>
+                <input type="text" value={editingBanner.subtitle} onChange={e => setEditingBanner({...editingBanner, subtitle: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Image URL</label>
+                <input type="url" value={editingBanner.image} onChange={e => setEditingBanner({...editingBanner, image: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" required />
+              </div>
+              <button type="submit" className="w-full py-3 bg-[#50007c] text-white font-black rounded-xl cursor-pointer shadow-md">
+                Save Banner
+              </button>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* CATEGORY EDIT / ADD MODAL */}
+      {isCategoryModalOpen && editingCategory && (
+        <div className="fixed inset-0 z-60 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button onClick={() => setIsCategoryModalOpen(false)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-lg font-black text-slate-900 mb-4">Edit Category Card</h3>
+            <form onSubmit={handleSaveCategory} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Category Title</label>
+                <input type="text" value={editingCategory.title} onChange={e => setEditingCategory({...editingCategory, title: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" required />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Subtitle</label>
+                <input type="text" value={editingCategory.subtitle} onChange={e => setEditingCategory({...editingCategory, subtitle: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" required />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Photo Image URL</label>
+                <input type="url" value={editingCategory.image} onChange={e => setEditingCategory({...editingCategory, image: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" required />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Badge</label>
+                <input type="text" value={editingCategory.badge} onChange={e => setEditingCategory({...editingCategory, badge: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" />
+              </div>
+              <button type="submit" className="w-full py-3 bg-[#50007c] text-white font-black rounded-xl cursor-pointer shadow-md">
+                Save Category Card
+              </button>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
