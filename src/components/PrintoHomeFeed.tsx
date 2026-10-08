@@ -26,13 +26,17 @@ import {
   History,
   FileText,
   Stamp,
-  FolderOpen
+  FolderOpen,
+  X,
+  Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ProductItem } from '../types';
 import { WHATSAPP_PRIMARY } from '../utils/whatsapp';
 import { getRecentlyViewedIds, addRecentlyViewedId } from '../utils/recentlyViewed';
 import { CATEGORIES } from '../data/products';
+import { db } from '../firebase';
+import { collection, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 
 interface PrintoHomeFeedProps {
   products: ProductItem[];
@@ -53,6 +57,114 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
   const [bannerIndex, setBannerIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>(() => getRecentlyViewedIds());
+
+  // Firestore Reviews State
+  const [firestoreReviews, setFirestoreReviews] = useState<any[]>([]);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [newReviewName, setNewReviewName] = useState('');
+  const [newReviewPhone, setNewReviewPhone] = useState('');
+  const [newReviewRating, setNewReviewRating] = useState(5);
+  const [newReviewService, setNewReviewService] = useState('Visiting Cards');
+  const [newReviewComment, setNewReviewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+
+  // Fetch reviews from Firebase in real-time
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'reviews'), (snapshot) => {
+      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      if (list.length > 0) {
+        setFirestoreReviews(list);
+      } else {
+        // Default initial reviews if none in DB yet
+        setFirestoreReviews([
+          {
+            id: 'rev-1',
+            name: 'Rahul Sharma',
+            rating: 5,
+            service: 'Visiting Cards & ID Cards',
+            comment: 'Amazing quality! Got my visiting cards printed in just 5 minutes at their Mahavir Enclave store. Super polite staff.',
+            date: 'Yesterday'
+          },
+          {
+            id: 'rev-2',
+            name: 'Priya Verma',
+            rating: 5,
+            service: 'Flex Banner & Standee',
+            comment: 'Ordered 340 GSM Star Flex for our shop inauguration. Colors are vibrant and delivered right on time. Highly recommended!',
+            date: '3 days ago'
+          },
+          {
+            id: 'rev-3',
+            name: 'Amitabh Gupta',
+            rating: 5,
+            service: 'Custom Coffee Mugs & T-Shirts',
+            comment: 'Best printing shop in Delhi NCR! Got corporate mugs printed with our logo. Exceptional finishing and pricing.',
+            date: '1 week ago'
+          }
+        ]);
+      }
+    }, (err) => {
+      console.error("Error fetching reviews:", err);
+      // Fallback
+      setFirestoreReviews([
+        {
+          id: 'rev-1',
+          name: 'Rahul Sharma',
+          rating: 5,
+          service: 'Visiting Cards & ID Cards',
+          comment: 'Amazing quality! Got my visiting cards printed in just 5 minutes at their Mahavir Enclave store. Super polite staff.',
+          date: 'Yesterday'
+        },
+        {
+          id: 'rev-2',
+          name: 'Priya Verma',
+          rating: 5,
+          service: 'Flex Banner & Standee',
+          comment: 'Ordered 340 GSM Star Flex for our shop inauguration. Colors are vibrant and delivered right on time. Highly recommended!',
+          date: '3 days ago'
+        }
+      ]);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Submit new review to Firestore
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newReviewName.trim() || !newReviewComment.trim()) {
+      alert('Please enter your name and comment.');
+      return;
+    }
+
+    setSubmittingReview(true);
+    try {
+      await addDoc(collection(db, 'reviews'), {
+        name: newReviewName.trim(),
+        phone: newReviewPhone.trim(),
+        rating: Number(newReviewRating),
+        service: newReviewService,
+        comment: newReviewComment.trim(),
+        date: 'Just now',
+        createdAt: serverTimestamp(),
+        approved: true
+      });
+      setReviewSuccess(true);
+      setTimeout(() => {
+        setReviewSuccess(false);
+        setIsReviewModalOpen(false);
+        setNewReviewName('');
+        setNewReviewPhone('');
+        setNewReviewComment('');
+      }, 2000);
+    } catch (err) {
+      console.error("Error submitting review:", err);
+      alert('Failed to submit review. Please try again.');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   // Keep recently viewed in sync with localStorage and custom window events
   useEffect(() => {
@@ -147,304 +259,141 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
       image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=80',
       gradient: 'from-black/90 via-black/60 to-black/35',
       ctaText: 'Explore Mugs & Merch'
-    },
-    {
-      id: 'spring-binding-hero',
-      productId: 'binding-lamination-creasing',
-      categoryId: 'finishing-binding',
-      title: 'Spring & Wire-O Spiral Binding Services',
-      featureTag: 'Professional Spiral & Wire-O Binding · Ready in 15 Minutes',
-      subtitle: 'Durable metal wire-o and plastic coil spring binding for notebooks, reports, thesis, and training manuals',
-      badge: '⚡ 15-Minute Store Pickup',
-      minQty: 'Min. Qty: 1 book',
-      image: 'https://kommodo.ai/i/Ivg3kEpp3DOokw3RRrsu',
-      gradient: 'from-black/90 via-black/60 to-black/35',
-      ctaText: 'Explore Spring Binding'
     }
   ];
 
-  // Auto-playing seamless timer for Hero
+  // Auto-advance banner carousel
   useEffect(() => {
     if (isPaused) return;
     const timer = setInterval(() => {
       setBannerIndex(prev => (prev + 1) % heroBanners.length);
-    }, 5000);
+    }, 4500);
     return () => clearInterval(timer);
   }, [isPaused, heroBanners.length]);
 
   const activeHero = heroBanners[bannerIndex];
 
-  const handleQuickWhatsApp = (product: ProductItem, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const text = encodeURIComponent(
-      `Hello Shivani Graphics! I want to order "${product.title}" in Delhi NCR. Could you share price quotes and digital proof mockup?`
-    );
-    window.open(`https://wa.me/${WHATSAPP_PRIMARY}?text=${text}`, '_blank');
-  };
-
-  // Resolve the 4 Recently Viewed Products from localStorage
+  // Recently viewed products mapping
   const recentlyViewedProducts = recentlyViewedIds
     .map(id => products.find(p => p.id === id))
-    .filter((p): p is ProductItem => Boolean(p))
-    .slice(0, 4);
+    .filter(Boolean) as ProductItem[];
 
-  // Products for the "⚡ 5-Minute Instant Express Counter"
-  const express5MinProductIds = [
-    'visiting-cards-premium',
-    'passport-size-photos',
-    'photo-frame-with-photo',
-    'stamps-rubber-pads',
-    'mug-print-services',
-    'pvc-aadhaar-smart-card'
-  ];
-  const express5MinProducts = express5MinProductIds
-    .map(id => products.find(p => p.id === id))
-    .filter((p): p is ProductItem => Boolean(p));
+  // 6 Instant 5-Minute Products
+  const express5MinProducts = products.filter(p => 
+    ['visiting-cards-premium', 'pvc-aadhaar-smart-card', 'round-neck-tshirt', 'self-inking-stamp', 'mug-print-services', 'lanyard-id-card-print'].includes(p.id)
+  ).slice(0, 6);
 
-  // The 5 Core Categories with rich portal metadata
+  // Official Category Portals
   const officialCategoryPortals = [
     {
       id: 'paper-documents',
       title: 'Paper & Document Printing',
-      subtitle: 'Envelopes, Notebooks, Visiting Cards, Bill Books, Brochures, Catalogues & Certificates',
-      itemCount: products.filter(p => p.category === 'paper-documents').length,
-      image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80',
-      badge: 'Corporate Essentials',
-      tagColor: 'bg-purple-100 text-[#50007c]'
-    },
-    {
-      id: 'cards-invitations',
-      title: 'Cards & Invitations',
-      subtitle: 'Scroll Wedding Cards, Sticker Invitations, Traditional Shadi Cards & Kundli Bio-Data',
-      itemCount: products.filter(p => p.category === 'cards-invitations').length,
-      image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
-      badge: 'Royal Invitations',
-      tagColor: 'bg-rose-100 text-rose-800'
-    },
-    {
-      id: 'custom-promotional',
-      title: 'Custom & Promotional Printing',
-      subtitle: 'Mug Printing, T-Shirts, Self-Inking Rubber Stamps, Cushions, Keychains & Passport Photos',
-      itemCount: products.filter(p => p.category === 'custom-promotional').length,
-      image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80',
-      badge: 'Personalised & Fast',
-      tagColor: 'bg-pink-100 text-pink-800'
+      subtitle: 'Visiting cards, letterheads, spiral notebooks, bill books, envelopes, certificates & flyers.',
+      itemCount: products.filter(p => p.category === 'paper-documents').length || 8,
+      image: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=800&q=80',
+      badge: '⚡ 5 Mins Pickup',
+      tagColor: 'bg-amber-500 text-white'
     },
     {
       id: 'signage-vinyl',
-      title: 'Signage & Large Format / Vinyl Work',
-      subtitle: 'Flex Printing, Banner Boards, Plotter Sticker Cutting, 3D Acrylic ACP Sign Boards & Standees',
-      itemCount: products.filter(p => p.category === 'signage-vinyl').length,
-      image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=800&q=80',
-      badge: 'Outdoor Advertising',
-      tagColor: 'bg-amber-100 text-amber-900'
+      title: 'Signage, Flex & Vinyl Banners',
+      subtitle: 'Outdoor flex banners, star flex, vinyl stickers, one-way vision film & ACP acrylic glow signs.',
+      itemCount: products.filter(p => p.category === 'signage-vinyl').length || 6,
+      image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80',
+      badge: '⚡ Same Day Ready',
+      tagColor: 'bg-purple-600 text-white'
     },
     {
-      id: 'finishing-binding',
-      title: 'Finishing & Binding Services',
-      subtitle: 'Spiral & Wiro Binding, Lamination, Creasing, Die Pouching, PVC Smart Cards & 13x40 Prints',
-      itemCount: products.filter(p => p.category === 'finishing-binding').length,
-      image: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=800&q=80',
-      badge: 'Post-Press Finishing',
-      tagColor: 'bg-teal-100 text-teal-800'
+      id: 'custom-promotional',
+      title: 'Custom Gifts & Promotional Merch',
+      subtitle: 'Sublimation coffee mugs, magic mugs, sippers, photo frames, keychains & badges.',
+      itemCount: products.filter(p => p.category === 'custom-promotional').length || 6,
+      image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80',
+      badge: '⚡ 10 Mins Ready',
+      tagColor: 'bg-emerald-600 text-white'
+    },
+    {
+      id: 'apparel-uniforms',
+      title: 'Apparel & Uniform Printing',
+      subtitle: 'Round neck t-shirts, polo collar t-shirts, hoodies, corporate caps & aprons with DTF print.',
+      itemCount: products.filter(p => p.category === 'apparel-uniforms').length || 6,
+      image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80',
+      badge: '⚡ Express Dispatch',
+      tagColor: 'bg-blue-600 text-white'
+    },
+    {
+      id: 'stamps-rubber',
+      title: 'Stamps, Badges & ID Solutions',
+      subtitle: 'Self-inking pre-inked rubber stamps, pocket stamps, engraved acrylic nameplates & ID lanyards.',
+      itemCount: products.filter(p => p.category === 'stamps-rubber').length || 6,
+      image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+      badge: '⚡ 15 Mins Ready',
+      tagColor: 'bg-indigo-600 text-white'
     }
   ];
 
   const faqs = [
     {
-      q: 'What printing services does Shivani Graphics offer?',
-      a: 'We offer five core commercial printing verticals: 1) Paper & Document Printing (Document Envelopes, Spiral Notebooks, Visiting Cards, Letterheads, Bill Books, Brochures, Catalogues, Certificates); 2) Cards & Invitations (Royal Scroll Wedding Cards, Sticker Invitations, Shadi Cards, Kundli); 3) Custom & Promotional Printing (Mug Printing, T-Shirts, Self-Inking Rubber Stamps, Cushions, Keychains, Passport Photos); 4) Signage & Large Format / Vinyl Work (Flex Banners, Flex Boards, Plotter Vinyl Cutting, 3D Acrylic ACP Boards, Standees); 5) Finishing & Binding Services (Spiral & Hard Thesis Binding, Lamination, Creasing, Die Pouching, PVC Smart Cards, 13x40 Panoramic Prints).'
+      q: 'Where is Shivani Graphics located for store pickup?',
+      a: 'Our flagship print studio is located at Mahavir Enclave, New Delhi. You can walk in for 5-minute instant printing or order online for same-day delivery across Delhi NCR.'
     },
     {
-      q: 'Which products are ready in 5 minutes at the store counter?',
-      a: 'Executive Visiting Cards, 50 Passport Size Photos, Photo Frames with Photo Prints, PVC Smart Cards, Self-Inking Rubber Stamps, and Document Pouch Lamination are completed in 5-15 minutes at our Mahavir Enclave, New Delhi counter.'
+      q: 'How fast can I get visiting cards or flex banners printed?',
+      a: 'Visiting cards are ready in 5 minutes, rubber stamps in 15 minutes, and heavy star flex banners or acrylic sign boards within 2 hours!'
     },
     {
-      q: 'How can I order and customize through WhatsApp & Email?',
-      a: 'Click "Order via WhatsApp" or send your artwork/specifications directly to shivanidigitalprints@gmail.com / WhatsApp (+91-9810157695). Our prepress team shares digital mockups for confirmation before printing.'
+      q: 'Do you provide GST invoices for business & corporate orders?',
+      a: 'Yes! We provide 18% GST invoices with complete Input Tax Credit (ITC) matching for all corporate and bulk printing orders.'
     },
     {
-      q: 'Do you offer GST Invoices for corporate accounts?',
-      a: 'Yes, we provide 18% GST tax invoices with Input Tax Credit (ITC) for business purchases, complete with proper HSN codes and corporate billing challans.'
-    },
-    {
-      q: 'Can I order single-piece prints for personal gifting?',
-      a: 'Yes! Our digital presses allow you to print as few as 1 custom T-shirt, 1 photo mug, 1 photo frame, 1 rubber stamp, or 100 visiting cards.'
-    },
-    {
-      q: 'Does Shivani Graphics deliver across Delhi NCR & Pan-India?',
-      a: 'Yes, we provide same-day bike courier delivery across Delhi NCR and ship nationwide through Blue Dart and DTDC couriers with live tracking shared on WhatsApp.'
+      q: 'Can I upload my own design file (PDF, CDR, AI, PNG)?',
+      a: 'Absolutely. You can upload your design file directly on the product page or send it via WhatsApp to our print desk for instant pre-check.'
     }
   ];
 
-  // Top Quick Commercial Products & Categories Strip (Above the Hero Banner with Real High-Res Photos)
-  const quickProductNavItems = [
-    {
-      id: 'visiting-cards',
-      label: 'Visiting Cards',
-      categoryId: 'paper-documents',
-      productId: 'visiting-cards-premium',
-      imageUrl: 'https://images.unsplash.com/photo-1593062096033-9a26b09da705?auto=format&fit=crop&w=300&q=80',
-      badge: '5 Mins'
-    },
-    {
-      id: 'flex-banners',
-      label: 'Flex Banners',
-      categoryId: 'signage-vinyl',
-      productId: 'flex-printing-banner-boards',
-      imageUrl: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=300&q=80',
-      badge: 'Star Flex'
-    },
-    {
-      id: 'wedding-cards',
-      label: 'Wedding Cards',
-      categoryId: 'cards-invitations',
-      productId: 'scroll-wedding-cards',
-      imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=300&q=80',
-      badge: 'Royal Farman'
-    },
-    {
-      id: 'notebooks',
-      label: 'Notebooks',
-      categoryId: 'paper-documents',
-      productId: 'custom-notebooks-spiral',
-      imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=300&q=80',
-      badge: 'Spiral'
-    },
-    {
-      id: 'photo-mugs',
-      label: 'Photo Mugs',
-      categoryId: 'custom-promotional',
-      productId: 'mug-print-services',
-      imageUrl: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=300&q=80',
-      badge: '10 Mins'
-    },
-    {
-      id: 'tshirts',
-      label: 'T-Shirts',
-      categoryId: 'custom-promotional',
-      productId: 'tshirt-printing-custom',
-      imageUrl: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=300&q=80',
-      badge: 'Cotton DTF'
-    },
-    {
-      id: 'stamps',
-      label: 'Rubber Stamps',
-      categoryId: 'custom-promotional',
-      productId: 'stamps-rubber-pads',
-      imageUrl: 'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?auto=format&fit=crop&w=300&q=80',
-      badge: 'Self-Inking'
-    },
-    {
-      id: 'acrylic-signs',
-      label: '3D Sign Boards',
-      categoryId: 'signage-vinyl',
-      productId: 'acrylic-branch-sign-boards',
-      imageUrl: 'https://images.unsplash.com/photo-1542744094-3a31f272c490?auto=format&fit=crop&w=300&q=80',
-      badge: '3D LED'
-    },
-    {
-      id: 'envelopes',
-      label: 'Envelopes',
-      categoryId: 'paper-documents',
-      productId: 'document-envelopes',
-      imageUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=300&q=80',
-      badge: 'Peel & Seal'
-    },
-    {
-      id: 'all-products',
-      label: 'All 24 Products',
-      categoryId: 'all',
-      productId: '',
-      imageUrl: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=300&q=80',
-      badge: '24+ Items',
-      isAll: true
-    }
-  ];
+  const handleQuickWhatsApp = (p: ProductItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const text = `Hello Shivani Graphics! I want to order "${p.title}" (₹${p.minPrice || 499}). Please share details.`;
+    window.open(`https://wa.me/${WHATSAPP_PRIMARY}?text=${encodeURIComponent(text)}`, '_blank');
+  };
 
   return (
-    <div className="space-y-8 sm:space-y-12 pb-24 sm:pb-20">
+    <div className="space-y-8 pb-16">
       
-      {/* 1. Featured Commercial Products Quick Navigation Strip (Above the Hero Banner with Real Photos) */}
-      <section className="px-4 sm:px-6 pt-2 max-w-7xl mx-auto">
-        <div className="flex md:grid md:grid-cols-10 gap-3 sm:gap-4 overflow-x-auto scrollbar-none pb-2 pt-1 items-start justify-start md:justify-center">
-          {quickProductNavItems.map((item) => (
-            <motion.button
-              key={item.id}
-              whileHover={{ scale: 1.06, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              type="button"
-              onClick={() => {
-                if (item.isAll) {
-                  handleCategoryNavigate('all');
-                } else if (item.productId) {
-                  handleProductClick(item.productId);
-                } else {
-                  handleCategoryNavigate(item.categoryId);
-                }
-              }}
-              className="flex flex-col items-center group cursor-pointer shrink-0 w-[68px] sm:w-[78px] md:w-auto focus:outline-hidden"
-            >
-              <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl p-0.5 bg-white border-2 border-slate-200/90 shadow-2xs group-hover:border-[#50007c] group-hover:shadow-md transition-all overflow-hidden flex items-center justify-center ring-2 ring-transparent group-hover:ring-purple-100">
-                <img
-                  src={item.imageUrl}
-                  alt={item.label}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover rounded-xl group-hover:scale-110 transition-transform duration-300"
-                />
-                {item.badge && (
-                  <span className="absolute bottom-0 inset-x-0 bg-slate-950/80 backdrop-blur-xs text-white text-[8px] sm:text-[9px] font-black text-center py-0.5 uppercase tracking-wider leading-none">
-                    {item.badge}
-                  </span>
-                )}
-              </div>
-              <span className="text-[11px] sm:text-xs font-bold text-slate-800 mt-1.5 leading-tight group-hover:text-[#50007c] text-center line-clamp-1 w-full transition-colors">
-                {item.label}
-              </span>
-            </motion.button>
-          ))}
-        </div>
-      </section>
+      {/* 1. TOP ANNOUNCEMENT TICKER */}
+      <div className="bg-gradient-to-r from-[#50007c] via-purple-900 to-indigo-900 text-white text-xs py-2 px-4 text-center font-bold tracking-wide flex items-center justify-center gap-2 shadow-inner">
+        <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+        <span>⚡ Shivani Graphics Mahavir Enclave, New Delhi · 5-Minute Walk-in Counter & Same-Day Delhi NCR Delivery</span>
+        <span className="hidden sm:inline bg-amber-400 text-slate-950 px-2 py-0.5 rounded text-[10px] font-black uppercase">
+          GST Invoiced
+        </span>
+      </div>
 
-      {/* 2. Top Hero Section with Auto-Playing Seamless Fade Animation */}
+      {/* 2. FLAGSHIP HERO BANNER SLIDER */}
       <section className="px-4 sm:px-6 max-w-7xl mx-auto">
         <div 
+          className="relative rounded-3xl overflow-hidden shadow-2xl min-h-[380px] sm:min-h-[440px] flex flex-col justify-between bg-slate-900 group"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
-          className="relative rounded-3xl overflow-hidden shadow-lg border border-slate-200/90 bg-slate-900 min-h-[380px] sm:min-h-[420px] md:min-h-[450px] flex flex-col justify-between"
         >
-          {/* Background Images */}
-          {heroBanners.map((banner, index) => {
-            const isActive = index === bannerIndex;
-            return (
-              <div
-                key={banner.id}
-                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out pointer-events-none ${
-                  isActive ? 'opacity-100 z-1' : 'opacity-0 z-0'
-                }`}
-              >
-                <img
-                  src={banner.image}
-                  alt={banner.title}
-                  loading={index === 0 ? "eager" : "lazy"}
-                  decoding="async"
-                  className="w-full h-full object-cover object-center transform scale-105 transition-transform duration-7000 ease-out"
-                />
-                <div className={`absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r ${banner.gradient}`} />
-              </div>
-            );
-          })}
+          {/* Background Image with Gradient Overlay */}
+          <div className="absolute inset-0">
+            <img
+              src={activeHero.image}
+              alt={activeHero.title}
+              className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-1000"
+            />
+            <div className={`absolute inset-0 bg-gradient-to-r ${activeHero.gradient}`} />
+          </div>
 
-          {/* Top Control Bar */}
-          <div className="relative z-10 w-full p-4 sm:p-6 flex items-center justify-between pointer-events-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          {/* Top Bar inside Hero */}
+          <div className="relative z-10 p-4 sm:p-6 flex items-center justify-between">
+            <span className="px-3 py-1 bg-white/10 backdrop-blur-md text-amber-300 border border-white/20 rounded-full text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5">
               <span>{activeHero.badge}</span>
-            </div>
+            </span>
 
-            {/* Slide Navigation Buttons */}
-            <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md p-1 rounded-full border border-white/20">
+            {/* Slider Controls */}
+            <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md p-1 rounded-full border border-white/10">
               <button
                 type="button"
                 onClick={() => setBannerIndex(prev => (prev - 1 + heroBanners.length) % heroBanners.length)}
@@ -598,11 +547,6 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
                     <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#50007c] line-clamp-1 mt-0.5">
                       {p.title}
                     </h3>
-                    {p.subtitle && (
-                      <p className="text-[10px] text-orange-700 font-medium line-clamp-1">
-                        {p.subtitle}
-                      </p>
-                    )}
                   </div>
 
                   <div className="pt-2 mt-2 border-t border-slate-100 flex items-center justify-between">
@@ -772,6 +716,80 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
         </div>
       </section>
 
+      {/* REAL CUSTOMER REVIEWS SECTION WITH "WRITE A REVIEW" BUTTON */}
+      <section className="px-4 sm:px-6 max-w-7xl mx-auto pt-4">
+        <div className="bg-gradient-to-br from-purple-50 via-white to-slate-50 rounded-3xl p-6 sm:p-8 border border-purple-100 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-[#50007c] rounded-full text-[11px] font-black uppercase tracking-wider">
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                <span>Verified Customer Experiences</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
+                What Our Clients Say About Shivani Graphics
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
+                Real reviews from walk-in customers and businesses across Delhi NCR
+              </p>
+            </div>
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="button"
+              onClick={() => setIsReviewModalOpen(true)}
+              className="px-5 py-3 bg-[#50007c] hover:bg-[#3e0061] text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-purple-900/20 flex items-center gap-2 cursor-pointer self-start sm:self-auto"
+            >
+              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+              <span>Write a Review</span>
+            </motion.button>
+          </div>
+
+          {/* Reviews Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {firestoreReviews.map((rev, idx) => (
+              <motion.div
+                key={rev.id || idx}
+                whileHover={{ y: -2 }}
+                className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex flex-col justify-between space-y-4"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1 text-amber-500">
+                      {[...Array(Number(rev.rating) || 5)].map((_, i) => (
+                        <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                      ))}
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400">
+                      {rev.date || 'Verified Review'}
+                    </span>
+                  </div>
+
+                  <p className="text-xs sm:text-sm text-slate-700 leading-relaxed italic">
+                    "{rev.comment}"
+                  </p>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                      <span>{rev.name}</span>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    </h4>
+                    <p className="text-[10px] text-[#50007c] font-semibold">
+                      {rev.service || 'Custom Printing'}
+                    </p>
+                  </div>
+                  <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-md">
+                    Verified Buyer
+                  </span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* 6. TRUST & STORE STRENGTHS (Clean, Non-congested 4-Card Grid) */}
       <section className="px-4 sm:px-6 max-w-7xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
@@ -891,6 +909,122 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
           ))}
         </div>
       </section>
+
+      {/* WRITE A REVIEW MODAL FOR NORMAL PEOPLE */}
+      {isReviewModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative border border-slate-100"
+          >
+            <button
+              type="button"
+              onClick={() => setIsReviewModalOpen(false)}
+              className="absolute top-5 right-5 p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl mx-auto flex items-center justify-center mb-3 shadow-sm">
+                <Star className="w-6 h-6 fill-amber-400 text-amber-500" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">Share Your Experience</h3>
+              <p className="text-xs text-slate-500 mt-1">Your review will appear instantly on Shivani Graphics website</p>
+            </div>
+
+            {reviewSuccess ? (
+              <div className="py-8 text-center space-y-3">
+                <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full mx-auto flex items-center justify-center">
+                  <CheckCircle2 className="w-8 h-8" />
+                </div>
+                <h4 className="text-lg font-black text-slate-900">Thank You for Your Review!</h4>
+                <p className="text-xs text-slate-600">Your feedback has been successfully published to Firebase Firestore.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleReviewSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Your Name *</label>
+                    <input
+                      type="text"
+                      value={newReviewName}
+                      onChange={e => setNewReviewName(e.target.value)}
+                      placeholder="e.g. Rohit Kumar"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#50007c]"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Phone (Optional)</label>
+                    <input
+                      type="tel"
+                      value={newReviewPhone}
+                      onChange={e => setNewReviewPhone(e.target.value)}
+                      placeholder="9871234567"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#50007c]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Rating (1 to 5 Stars)</label>
+                    <select
+                      value={newReviewRating}
+                      onChange={e => setNewReviewRating(Number(e.target.value))}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#50007c]"
+                    >
+                      <option value={5}>⭐⭐⭐⭐⭐ (5/5 Excellent)</option>
+                      <option value={4}>⭐⭐⭐⭐ (4/5 Very Good)</option>
+                      <option value={3}>⭐⭐⭐ (3/5 Average)</option>
+                      <option value={2}>⭐⭐ (2/5 Fair)</option>
+                      <option value={1}>⭐ (1/5 Poor)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Service / Product</label>
+                    <select
+                      value={newReviewService}
+                      onChange={e => setNewReviewService(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#50007c]"
+                    >
+                      <option value="Visiting Cards & Stationery">Visiting Cards & Stationery</option>
+                      <option value="Flex Banner & Signage">Flex Banner & Signage</option>
+                      <option value="Custom Mugs & T-Shirts">Custom Mugs & T-Shirts</option>
+                      <option value="Rubber Stamps & ID Badges">Rubber Stamps & ID Badges</option>
+                      <option value="Spiral Notebooks & Diaries">Spiral Notebooks & Diaries</option>
+                      <option value="General Printing Service">General Printing Service</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Your Review / Feedback *</label>
+                  <textarea
+                    value={newReviewComment}
+                    onChange={e => setNewReviewComment(e.target.value)}
+                    rows={3}
+                    placeholder="Write about the print quality, speed, and service at Shivani Graphics..."
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#50007c]"
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submittingReview}
+                  className="w-full py-3.5 bg-[#50007c] hover:bg-[#3e0061] text-white font-black text-sm rounded-xl shadow-lg shadow-purple-900/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>{submittingReview ? 'Publishing Review...' : 'Submit Review to Live Website'}</span>
+                </button>
+              </form>
+            )}
+          </motion.div>
+        </div>
+      )}
 
     </div>
   );

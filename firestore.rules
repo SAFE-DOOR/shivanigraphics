@@ -39,8 +39,7 @@ service cloud.firestore {
     }
 
     match /reviews/{id} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow read, write: if true;
     }
 
     // Orders & Quotes (Authenticated or Public submission with auth for admin management)

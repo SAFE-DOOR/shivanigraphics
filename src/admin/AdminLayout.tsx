@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, ShoppingBag, Package, Image, FileText, Users, CreditCard, 
-  PackageOpen, Tag, Star, BarChart2, ShieldCheck, Settings, Activity, LogOut, Menu, X, ExternalLink 
+  PackageOpen, Tag, Star, BarChart2, ShieldCheck, Settings, Activity, LogOut, Menu, X, ExternalLink, Layers 
 } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
 import { DashboardView } from './DashboardView';
 import { ProductsView } from './ProductsView';
 import { BannersImagesView } from './BannersImagesView';
+import { CategoriesView } from './CategoriesView';
 import { OrdersView } from './OrdersView';
 import { QuotesView } from './QuotesView';
 import { CmsView } from './CmsView';
@@ -17,15 +18,17 @@ interface AdminLayoutProps {
 }
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => {
-  const { currentAdminUser, logout } = useAdmin();
+  const { currentAdminUser, logout, products } = useAdmin();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
     { id: 'orders', label: 'Orders OMS', icon: <ShoppingBag className="w-4 h-4" /> },
-    { id: 'products', label: 'Products Catalog', icon: <Package className="w-4 h-4" /> },
-    { id: 'banners', label: 'Website Images', icon: <Image className="w-4 h-4" /> },
+    { id: 'products', label: `Products Catalog (${products.length})`, icon: <Package className="w-4 h-4" /> },
+    { id: 'banners', label: 'Hero Banners', icon: <Image className="w-4 h-4" /> },
+    { id: 'categories', label: 'Category Cards', icon: <Layers className="w-4 h-4" /> },
+    { id: 'images', label: 'Website Image Library', icon: <Image className="w-4 h-4" /> },
     { id: 'quotes', label: 'Quote Requests', icon: <FileText className="w-4 h-4" /> },
     { id: 'inventory', label: 'Inventory Stock', icon: <PackageOpen className="w-4 h-4" /> },
     { id: 'marketing', label: 'Coupons & Offers', icon: <Tag className="w-4 h-4" /> },
@@ -41,6 +44,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
       case 'orders': return <OrdersView />;
       case 'products': return <ProductsView />;
       case 'banners': return <BannersImagesView />;
+      case 'categories': return <CategoriesView />;
+      case 'images': return <BannersImagesView />;
       case 'quotes': return <QuotesView />;
       case 'inventory': return <InventoryView />;
       case 'marketing': return <MarketingView />;
@@ -56,7 +61,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
     <div className="min-h-screen bg-slate-100 flex font-sans text-slate-900 selection:bg-purple-600 selection:text-white">
       
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 bg-slate-900 text-slate-300 border-r border-slate-800 shrink-0">
+      <aside className="hidden lg:flex flex-col w-72 bg-slate-900 text-slate-300 border-r border-slate-800 shrink-0">
         <div className="p-5 border-b border-slate-800 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#50007c] to-orange-500 flex items-center justify-center text-white font-black shadow-md">
             SG

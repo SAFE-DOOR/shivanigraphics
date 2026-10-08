@@ -27,6 +27,7 @@ import { ArtworkGuidelinesPage } from './components/pages/ArtworkGuidelinesPage'
 import { ContactPage } from './components/pages/ContactPage';
 import { PaymentBillingPage } from './components/pages/PaymentBillingPage';
 import { ProductsGalleryPage } from './components/pages/ProductsGalleryPage';
+import { MasterAdminPanel } from './components/MasterAdminPanel';
 
 // Admin Studio System
 import { AdminProvider, useAdmin } from './context/AdminContext';
@@ -78,7 +79,7 @@ export default function App() {
         setCurrentView('admin');
         return;
       }
-      const validViews: AppView[] = [
+      const validViews = [
         'terms', 
         'privacy', 
         'refund-policy', 
@@ -91,7 +92,7 @@ export default function App() {
         'gallery',
         'admin'
       ];
-      if (validViews.includes(hash as AppView)) {
+      if ((validViews as string[]).includes(hash)) {
         setCurrentView(hash as AppView);
       }
     };
@@ -292,6 +293,9 @@ export default function App() {
                 <div className="py-8">
                   <HelpCenter isModal={false} />
                 </div>
+              )}
+              {(currentView as string) === 'admin' && (
+                <MasterAdminPanel onClose={() => navigateTo('home')} />
               )}
             </motion.div>
           </AnimatePresence>

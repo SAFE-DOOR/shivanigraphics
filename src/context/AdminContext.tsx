@@ -2,7 +2,9 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { PRODUCTS, CATEGORIES } from '../data/products';
 import { ProductItem } from '../types';
 import { db } from '../firebase';
-import { collection, getDocs, doc, setDoc, deleteDoc, updateDoc, getDoc } from 'firebase/firestore';
+import { 
+  collection, getDocs, doc, setDoc, deleteDoc, updateDoc, getDoc, onSnapshot 
+} from 'firebase/firestore';
 
 export interface AdminUser {
   email: string;
@@ -119,6 +121,7 @@ interface AdminContextType {
   updateInventory: (id: string, qty: number) => Promise<void>;
   reviews: ReviewItem[];
   toggleReviewApproval: (id: string) => Promise<void>;
+  addPublicReview: (review: { name: string; rating: number; review: string }) => Promise<void>;
   auditLogs: AuditLog[];
   logAction: (action: string, adminName: string) => void;
   isFirebaseLoading: boolean;
@@ -127,172 +130,125 @@ interface AdminContextType {
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
-    return localStorage.getItem('sg_admin_logged') === 'true';
-  });
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
+  const [currentAdminUser, setCurrentAdminUser] = useState<AdminUser | null>(null);
 
-  const [currentAdminUser, setCurrentAdminUser] = useState<AdminUser | null>(() => {
-    const saved = localStorage.getItem('sg_admin_user');
-    return saved ? JSON.parse(saved) : { email: 'raimanish200822@gmail.com', name: 'Ranjan Roy', role: 'Super Admin' };
+  const [products, setProducts] = useState<ProductItem[]>(PRODUCTS);
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [quotes, setQuotes] = useState<AdminQuote[]>([]);
+  const [websiteImages, setWebsiteImages] = useState<WebsiteImage[]>([
+    { id: 'img-1', title: 'Homepage Hero Main', section: 'Hero', url: 'https://images.unsplash.com/photo-1593062096033-9a26b09da705?auto=format&fit=crop&w=1200&q=80', alt: 'Visiting Cards', enabled: true, sortOrder: 1 },
+    { id: 'img-2', title: 'Outdoor Flex Banner', section: 'Hero', url: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1200&q=80', alt: 'Flex Banners', enabled: true, sortOrder: 2 }
+  ]);
+  const [websiteContent, setWebsiteContent] = useState({
+    heroHeading: 'Shivani Graphics · Printo-Style Commercial Printing',
+    heroSubtitle: 'Premium digital printing, visiting cards, flex banners, 3D acrylic LED boards & corporate merch in Delhi NCR.',
+    phone: '+91-9266944315',
+    whatsapp: '919266944315',
+    email: 'shivanidigitalprints@gmail.com',
+    address: 'D3/50, Gali No. 8A, Mahavir Enclave, New Delhi, Delhi 110045',
+    businessName: 'Shivani Graphics'
   });
-
-  // LocalStorage initializers with fallback
-  const [products, setProducts] = useState<ProductItem[]>(() => {
-    const saved = localStorage.getItem('sg_admin_products');
-    return saved ? JSON.parse(saved) : PRODUCTS;
-  });
-
-  const [orders, setOrders] = useState<AdminOrder[]>(() => {
-    const saved = localStorage.getItem('sg_admin_orders');
-    return saved ? JSON.parse(saved) : [
-      { id: 'ORD-1001', customerName: 'Rajesh Sharma', phone: '+91 9810157695', email: 'rajesh@gmail.com', address: 'Mahavir Enclave, Delhi', productTitle: 'Visiting Cards (500 pcs)', quantity: 500, options: '350 GSM Matte', totalAmount: 750, status: 'Printing', paymentStatus: 'Paid', date: '2026-10-07' },
-      { id: 'ORD-1002', customerName: 'Priya Verma', phone: '+91 9266944315', email: 'priya@gmail.com', address: 'Dwarka Sector 7, Delhi', productTitle: 'Star Flex Banner (6x3 ft)', quantity: 1, options: '340 GSM Star Flex', totalAmount: 1200, status: 'Ready', paymentStatus: 'Paid', date: '2026-10-07' }
-    ];
-  });
-
-  const [quotes, setQuotes] = useState<AdminQuote[]>(() => {
-    const saved = localStorage.getItem('sg_admin_quotes');
-    return saved ? JSON.parse(saved) : [
-      { id: 'QTE-501', customerName: 'Amit Kumar', phone: '+91 9810000000', email: 'amit@corp.com', service: 'Corporate Catalogs', quantity: 1000, specifications: 'Glossy art paper, 16 pages', status: 'Pending', date: '2026-10-07' }
-    ];
-  });
-
-  const [websiteImages, setWebsiteImages] = useState<WebsiteImage[]>(() => {
-    const saved = localStorage.getItem('sg_admin_images');
-    return saved ? JSON.parse(saved) : [
-      { id: 'img-1', title: 'Homepage Hero Main', section: 'Hero', url: 'https://images.unsplash.com/photo-1593062096033-9a26b09da705?auto=format&fit=crop&w=1200&q=80', alt: 'Visiting Cards', enabled: true, sortOrder: 1 },
-      { id: 'img-2', title: 'Outdoor Flex Banner', section: 'Hero', url: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1200&q=80', alt: 'Flex Banners', enabled: true, sortOrder: 2 }
-    ];
-  });
-
-  const [websiteContent, setWebsiteContent] = useState(() => {
-    const saved = localStorage.getItem('sg_admin_content');
-    return saved ? JSON.parse(saved) : {
-      heroHeading: 'Shivani Graphics · Printo-Style Commercial Printing',
-      heroSubtitle: 'Premium digital printing, visiting cards, flex banners, 3D acrylic LED boards & corporate merch in Delhi NCR.',
-      phone: '+91-9266944315',
-      whatsapp: '919266944315',
-      email: 'shivanidigitalprints@gmail.com',
-      address: 'D3/50, Gali No. 8A, Mahavir Enclave, New Delhi, Delhi 110045',
-      businessName: 'Shivani Graphics'
-    };
-  });
-
-  const [coupons, setCoupons] = useState<CouponItem[]>(() => {
-    const saved = localStorage.getItem('sg_admin_coupons');
-    return saved ? JSON.parse(saved) : [
-      { code: 'WELCOME10', discountType: 'percentage', discountValue: 10, minOrder: 500, active: true },
-      { code: 'DELHI200', discountType: 'fixed', discountValue: 200, minOrder: 2000, active: true }
-    ];
-  });
-
-  const [inventory, setInventory] = useState<InventoryItem[]>(() => {
-    const saved = localStorage.getItem('sg_admin_inventory');
-    return saved ? JSON.parse(saved) : [
-      { id: 'inv-1', item: '350 GSM Art Card Reams', sku: 'PAPER-350GSM', currentStock: 45, minStock: 10, unit: 'Reams' },
-      { id: 'inv-2', item: 'Star Flex Vinyl Roll 340 GSM', sku: 'FLEX-340GSM', currentStock: 12, minStock: 3, unit: 'Rolls' },
-      { id: 'inv-3', item: 'Matte Lamination Roll', sku: 'LAM-MATTE', currentStock: 8, minStock: 2, unit: 'Rolls' }
-    ];
-  });
-
-  const [reviews, setReviews] = useState<ReviewItem[]>(() => {
-    const saved = localStorage.getItem('sg_admin_reviews');
-    return saved ? JSON.parse(saved) : [
-      { id: 'rev-1', name: 'Rohan Sharma', rating: 5, review: 'Amazing quality visiting cards ready in just 5 minutes at Mahavir Enclave store!', date: '2026-10-06', approved: true },
-      { id: 'rev-2', name: 'Neha Gupta', rating: 5, review: 'Best flex banner printing in Delhi NCR. Very prompt service.', date: '2026-10-07', approved: true }
-    ];
-  });
-
+  const [coupons, setCoupons] = useState<CouponItem[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([
+    { id: 'inv-1', item: '350 GSM Art Card Reams', sku: 'PAPER-350GSM', currentStock: 45, minStock: 10, unit: 'Reams' },
+    { id: 'inv-2', item: 'Star Flex Vinyl Roll 340 GSM', sku: 'FLEX-340GSM', currentStock: 12, minStock: 3, unit: 'Rolls' },
+    { id: 'inv-3', item: 'Matte Lamination Roll', sku: 'LAM-MATTE', currentStock: 8, minStock: 2, unit: 'Rolls' }
+  ]);
+  const [reviews, setReviews] = useState<ReviewItem[]>([
+    { id: 'rev-1', name: 'Rohan Sharma', rating: 5, review: 'Amazing quality visiting cards ready in just 5 minutes at Mahavir Enclave store!', date: '2026-10-06', approved: true },
+    { id: 'rev-2', name: 'Neha Gupta', rating: 5, review: 'Best flex banner printing in Delhi NCR. Very prompt service.', date: '2026-10-07', approved: true }
+  ]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([
-    { id: 'log-1', admin: 'Ranjan Roy', action: 'Logged in to Master Admin Studio', date: '2026-10-07', time: '19:10' }
+    { id: 'log-1', admin: 'Ranjan Roy', action: 'Master Admin Studio Initialized', date: '2026-10-07', time: '19:10' }
   ]);
 
   const [isFirebaseLoading, setIsFirebaseLoading] = useState(true);
 
-  // Sync with Firestore on mount and save to LocalStorage simultaneously
+  // Firestore Real-Time onSnapshot Listeners & Auto-Seeding All 31+ Products
   useEffect(() => {
-    async function initFirestoreSync() {
+    async function seedAndListen() {
       try {
-        // 1. Products
+        // Auto-seed all 31+ products from PRODUCTS into Firestore
         const prodSnap = await getDocs(collection(db, 'products'));
-        if (!prodSnap.empty) {
-          const cloudProds = prodSnap.docs.map(d => d.data() as ProductItem);
-          setProducts(cloudProds);
-          localStorage.setItem('sg_admin_products', JSON.stringify(cloudProds));
-        } else {
+        if (prodSnap.empty || prodSnap.docs.length < PRODUCTS.length) {
           for (const p of PRODUCTS) {
             await setDoc(doc(db, 'products', p.id), p);
           }
         }
 
-        // 2. Orders
-        const ordSnap = await getDocs(collection(db, 'orders'));
-        if (!ordSnap.empty) {
-          const cloudOrds = ordSnap.docs.map(d => d.data() as AdminOrder);
-          setOrders(cloudOrds);
-          localStorage.setItem('sg_admin_orders', JSON.stringify(cloudOrds));
-        } else {
-          for (const o of orders) {
-            await setDoc(doc(db, 'orders', o.id), o);
+        // Auto-seed reviews if empty
+        const revSnap = await getDocs(collection(db, 'reviews'));
+        if (revSnap.empty) {
+          for (const r of reviews) {
+            await setDoc(doc(db, 'reviews', r.id), r);
           }
         }
 
-        // 3. Quotes
-        const qteSnap = await getDocs(collection(db, 'quotes'));
-        if (!qteSnap.empty) {
-          const cloudQtes = qteSnap.docs.map(d => d.data() as AdminQuote);
-          setQuotes(cloudQtes);
-          localStorage.setItem('sg_admin_quotes', JSON.stringify(cloudQtes));
-        } else {
-          for (const q of quotes) {
-            await setDoc(doc(db, 'quotes', q.id), q);
-          }
-        }
-
-        // 4. Website Images
+        // Auto-seed website images if empty
         const imgSnap = await getDocs(collection(db, 'website_images'));
-        if (!imgSnap.empty) {
-          const cloudImgs = imgSnap.docs.map(d => d.data() as WebsiteImage);
-          setWebsiteImages(cloudImgs);
-          localStorage.setItem('sg_admin_images', JSON.stringify(cloudImgs));
-        } else {
+        if (imgSnap.empty) {
           for (const img of websiteImages) {
             await setDoc(doc(db, 'website_images', img.id), img);
           }
         }
 
-        // 5. Website Content
+        // Auto-seed website content if empty
         const contentRef = doc(db, 'system_settings', 'website_content');
         const contentSnap = await getDoc(contentRef);
-        if (contentSnap.exists()) {
-          const cloudContent = contentSnap.data();
-          setWebsiteContent(cloudContent as any);
-          localStorage.setItem('sg_admin_content', JSON.stringify(cloudContent));
-        } else {
+        if (!contentSnap.exists()) {
           await setDoc(contentRef, websiteContent);
         }
 
       } catch (e) {
-        console.warn('Firestore sync fallback to LocalStorage active:', e);
-      } finally {
-        setIsFirebaseLoading(false);
+        console.warn('Firestore seeding notice:', e);
       }
     }
-    initFirestoreSync();
-  }, []);
 
-  useEffect(() => {
-    localStorage.setItem('sg_admin_logged', String(isAdminLoggedIn));
-    if (currentAdminUser) localStorage.setItem('sg_admin_user', JSON.stringify(currentAdminUser));
-    localStorage.setItem('sg_admin_products', JSON.stringify(products));
-    localStorage.setItem('sg_admin_orders', JSON.stringify(orders));
-    localStorage.setItem('sg_admin_quotes', JSON.stringify(quotes));
-    localStorage.setItem('sg_admin_images', JSON.stringify(websiteImages));
-    localStorage.setItem('sg_admin_content', JSON.stringify(websiteContent));
-    localStorage.setItem('sg_admin_coupons', JSON.stringify(coupons));
-    localStorage.setItem('sg_admin_inventory', JSON.stringify(inventory));
-    localStorage.setItem('sg_admin_reviews', JSON.stringify(reviews));
-  }, [isAdminLoggedIn, currentAdminUser, products, orders, quotes, websiteImages, websiteContent, coupons, inventory, reviews]);
+    seedAndListen();
+
+    // Attach real-time onSnapshot listeners
+    const unsubProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
+      const items = snapshot.docs.map(d => d.data() as ProductItem);
+      if (items.length > 0) setProducts(items);
+      setIsFirebaseLoading(false);
+    }, (err) => console.warn('Products snapshot error:', err));
+
+    const unsubOrders = onSnapshot(collection(db, 'orders'), (snapshot) => {
+      const items = snapshot.docs.map(d => d.data() as AdminOrder);
+      setOrders(items);
+    }, (err) => console.warn('Orders snapshot error:', err));
+
+    const unsubQuotes = onSnapshot(collection(db, 'quotes'), (snapshot) => {
+      const items = snapshot.docs.map(d => d.data() as AdminQuote);
+      setQuotes(items);
+    }, (err) => console.warn('Quotes snapshot error:', err));
+
+    const unsubReviews = onSnapshot(collection(db, 'reviews'), (snapshot) => {
+      const items = snapshot.docs.map(d => d.data() as ReviewItem);
+      if (items.length > 0) setReviews(items);
+    }, (err) => console.warn('Reviews snapshot error:', err));
+
+    const unsubImages = onSnapshot(collection(db, 'website_images'), (snapshot) => {
+      const items = snapshot.docs.map(d => d.data() as WebsiteImage);
+      if (items.length > 0) setWebsiteImages(items);
+    }, (err) => console.warn('Images snapshot error:', err));
+
+    const unsubContent = onSnapshot(doc(db, 'system_settings', 'website_content'), (docSnap) => {
+      if (docSnap.exists()) {
+        setWebsiteContent(docSnap.data() as any);
+      }
+    }, (err) => console.warn('Content snapshot error:', err));
+
+    return () => {
+      unsubProducts();
+      unsubOrders();
+      unsubQuotes();
+      unsubReviews();
+      unsubImages();
+      unsubContent();
+    };
+  }, []);
 
   const login = (user: AdminUser) => {
     setIsAdminLoggedIn(true);
@@ -303,6 +259,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const logout = () => {
     if (currentAdminUser) logAction(`Logged out`, currentAdminUser.name);
     setIsAdminLoggedIn(false);
+    setCurrentAdminUser(null);
   };
 
   const logAction = (action: string, adminName: string) => {
@@ -318,132 +275,127 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const updateProduct = async (updatedProd: ProductItem) => {
-    const updated = products.map(p => p.id === updatedProd.id ? updatedProd : p);
-    setProducts(updated);
-    localStorage.setItem('sg_admin_products', JSON.stringify(updated));
     try {
       await setDoc(doc(db, 'products', updatedProd.id), updatedProd);
+      logAction(`Updated product: ${updatedProd.title}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
       console.error('Firestore sync error:', e);
     }
-    logAction(`Updated product: ${updatedProd.title}`, currentAdminUser?.name || 'Admin');
   };
 
   const addProduct = async (newProd: ProductItem) => {
-    const updated = [newProd, ...products];
-    setProducts(updated);
-    localStorage.setItem('sg_admin_products', JSON.stringify(updated));
     try {
       await setDoc(doc(db, 'products', newProd.id), newProd);
+      logAction(`Added new product: ${newProd.title}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
       console.error('Firestore sync error:', e);
     }
-    logAction(`Added new product: ${newProd.title}`, currentAdminUser?.name || 'Admin');
   };
 
   const deleteProduct = async (id: string) => {
     const p = products.find(x => x.id === id);
-    const updated = products.filter(x => x.id !== id);
-    setProducts(updated);
-    localStorage.setItem('sg_admin_products', JSON.stringify(updated));
     try {
       await deleteDoc(doc(db, 'products', id));
+      logAction(`Deleted product: ${p?.title || id}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
       console.error('Firestore sync error:', e);
     }
-    logAction(`Deleted product: ${p?.title || id}`, currentAdminUser?.name || 'Admin');
   };
 
   const updateOrderStatus = async (id: string, status: AdminOrder['status']) => {
-    const updated = orders.map(o => o.id === id ? { ...o, status } : o);
-    setOrders(updated);
-    localStorage.setItem('sg_admin_orders', JSON.stringify(updated));
     try {
       await updateDoc(doc(db, 'orders', id), { status });
+      logAction(`Updated order ${id} status to ${status}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
       console.error('Firestore sync error:', e);
     }
-    logAction(`Updated order ${id} status to ${status}`, currentAdminUser?.name || 'Admin');
   };
 
   const updateQuoteStatus = async (id: string, status: AdminQuote['status'], price?: number) => {
-    const updated = quotes.map(q => q.id === id ? { ...q, status, quotedPrice: price ?? q.quotedPrice } : q);
-    setQuotes(updated);
-    localStorage.setItem('sg_admin_quotes', JSON.stringify(updated));
     try {
       await updateDoc(doc(db, 'quotes', id), { status, quotedPrice: price });
+      logAction(`Updated quote ${id} status to ${status}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
       console.error('Firestore sync error:', e);
     }
-    logAction(`Updated quote ${id} status to ${status}`, currentAdminUser?.name || 'Admin');
   };
 
   const updateWebsiteImage = async (img: WebsiteImage) => {
-    const updated = websiteImages.map(i => i.id === img.id ? img : i);
-    setWebsiteImages(updated);
-    localStorage.setItem('sg_admin_images', JSON.stringify(updated));
     try {
       await setDoc(doc(db, 'website_images', img.id), img);
+      logAction(`Updated website image: ${img.title}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
       console.error('Firestore sync error:', e);
     }
-    logAction(`Updated website image: ${img.title}`, currentAdminUser?.name || 'Admin');
   };
 
   const addWebsiteImage = async (img: WebsiteImage) => {
-    const updated = [img, ...websiteImages];
-    setWebsiteImages(updated);
-    localStorage.setItem('sg_admin_images', JSON.stringify(updated));
     try {
       await setDoc(doc(db, 'website_images', img.id), img);
+      logAction(`Added website image: ${img.title}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
       console.error('Firestore sync error:', e);
     }
-    logAction(`Added website image: ${img.title}`, currentAdminUser?.name || 'Admin');
   };
 
   const deleteWebsiteImage = async (id: string) => {
-    const updated = websiteImages.filter(i => i.id !== id);
-    setWebsiteImages(updated);
-    localStorage.setItem('sg_admin_images', JSON.stringify(updated));
     try {
       await deleteDoc(doc(db, 'website_images', id));
+      logAction(`Deleted website image ID: ${id}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
       console.error('Firestore sync error:', e);
     }
-    logAction(`Deleted website image ID: ${id}`, currentAdminUser?.name || 'Admin');
   };
 
   const updateWebsiteContent = async (content: any) => {
-    setWebsiteContent(content);
-    localStorage.setItem('sg_admin_content', JSON.stringify(content));
     try {
       await setDoc(doc(db, 'system_settings', 'website_content'), content);
+      logAction(`Updated website CMS content`, currentAdminUser?.name || 'Admin');
     } catch (e) {
       console.error('Firestore sync error:', e);
     }
-    logAction(`Updated website CMS content`, currentAdminUser?.name || 'Admin');
   };
 
   const addCoupon = async (c: CouponItem) => {
     const updated = [c, ...coupons];
     setCoupons(updated);
-    localStorage.setItem('sg_admin_coupons', JSON.stringify(updated));
     logAction(`Created coupon: ${c.code}`, currentAdminUser?.name || 'Admin');
   };
 
   const updateInventory = async (id: string, qty: number) => {
     const updated = inventory.map(i => i.id === id ? { ...i, currentStock: qty } : i);
     setInventory(updated);
-    localStorage.setItem('sg_admin_inventory', JSON.stringify(updated));
     logAction(`Updated inventory stock for item ID ${id}`, currentAdminUser?.name || 'Admin');
   };
 
   const toggleReviewApproval = async (id: string) => {
-    const updated = reviews.map(r => r.id === id ? { ...r, approved: !r.approved } : r);
+    const rev = reviews.find(r => r.id === id);
+    if (!rev) return;
+    const newStatus = !rev.approved;
+    const updated = reviews.map(r => r.id === id ? { ...r, approved: newStatus } : r);
     setReviews(updated);
-    localStorage.setItem('sg_admin_reviews', JSON.stringify(updated));
-    logAction(`Toggled review approval for ID ${id}`, currentAdminUser?.name || 'Admin');
+    try {
+      await updateDoc(doc(db, 'reviews', id), { approved: newStatus });
+      logAction(`Toggled review approval for ID ${id}`, currentAdminUser?.name || 'Admin');
+    } catch (e) {
+      console.error('Firestore sync error:', e);
+    }
+  };
+
+  const addPublicReview = async (review: { name: string; rating: number; review: string }) => {
+    const newRev: ReviewItem = {
+      id: `rev-${Date.now()}`,
+      name: review.name,
+      rating: review.rating,
+      review: review.review,
+      date: new Date().toISOString().split('T')[0],
+      approved: true // instant public visibility
+    };
+    try {
+      await setDoc(doc(db, 'reviews', newRev.id), newRev);
+    } catch (e) {
+      console.error('Error adding public review to Firestore:', e);
+    }
   };
 
   return (
@@ -472,6 +424,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       updateInventory,
       reviews,
       toggleReviewApproval,
+      addPublicReview,
       auditLogs,
       logAction,
       isFirebaseLoading
