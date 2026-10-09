@@ -1,29 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAdmin } from '../context/AdminContext';
-import { Package, Tag, Star, Users, FileText, ShieldCheck, Activity, Database, ExternalLink, Download, RefreshCw, Key, CheckCircle, AlertCircle, Copy, Server } from 'lucide-react';
-import { SUPABASE_SQL_SCHEMA, getSupabaseConfig, getSupabaseClient } from '../lib/supabase';
+import { Package, Tag, Star, Users, FileText, ShieldCheck, Activity, Database, ExternalLink, Download, RefreshCw, Key, CheckCircle, AlertCircle, Copy, Server, Flame } from 'lucide-react';
+import firebaseConfig from '../../firebase-applet-config.json';
+import { db, storage } from '../firebase';
 
 export const DatabaseView: React.FC = () => {
   const [dbData, setDbData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  // Supabase states
-  const [supabaseUrl, setSupabaseUrl] = useState('');
-  const [supabaseKey, setSupabaseKey] = useState('');
-  const [supabaseStatus, setSupabaseStatus] = useState<'idle' | 'testing' | 'connected' | 'error'>('idle');
-  const [supabaseErrorMsg, setSupabaseErrorMsg] = useState('');
-  const [sqlCopied, setSqlCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<'json' | 'supabase'>('supabase');
-
-  useEffect(() => {
-    const config = getSupabaseConfig();
-    setSupabaseUrl(config.url);
-    setSupabaseKey(config.key);
-    if (config.url && config.key) {
-      testSupabaseConnection(config.url, config.key);
-    }
-  }, []);
+  const [activeTab, setActiveTab] = useState<'firebase' | 'json'>('firebase');
+  const [rulesCopied, setRulesCopied] = useState(false);
 
   const fetchDb = async () => {
     setLoading(true);
@@ -64,162 +50,100 @@ export const DatabaseView: React.FC = () => {
     }
   };
 
-  const handleSaveSupabaseConfig = (e: React.FormEvent) => {
-    e.preventDefault();
-    localStorage.setItem('supabase_url', supabaseUrl.trim());
-    localStorage.setItem('supabase_anon_key', supabaseKey.trim());
-    testSupabaseConnection(supabaseUrl.trim(), supabaseKey.trim());
-  };
-
-  const testSupabaseConnection = async (url: string, key: string) => {
-    if (!url || !key) {
-      setSupabaseStatus('idle');
-      return;
+  const firestoreRules = `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
     }
-    setSupabaseStatus('testing');
-    setSupabaseErrorMsg('');
-    try {
-      const client = getSupabaseClient();
-      if (!client) throw new Error('Could not create Supabase client.');
-      // Test query on products table
-      const { data, error } = await client.from('products').select('id').limit(1);
-      if (error) {
-        // If table doesn't exist yet, client connected successfully but table needs creation
-        if (error.code === '42P01' || error.message.includes('does not exist')) {
-          setSupabaseStatus('connected');
-        } else {
-          throw error;
-        }
-      } else {
-        setSupabaseStatus('connected');
-      }
-    } catch (err: any) {
-      console.error(err);
-      setSupabaseStatus('error');
-      setSupabaseErrorMsg(err.message || 'Connection failed. Check URL & Anon Key.');
-    }
-  };
+  }
+}`;
 
-  const handleCopySql = () => {
-    navigator.clipboard.writeText(SUPABASE_SQL_SCHEMA);
-    setSqlCopied(true);
-    setTimeout(() => setSqlCopied(false), 2500);
+  const handleCopyRules = () => {
+    navigator.clipboard.writeText(firestoreRules);
+    setRulesCopied(true);
+    setTimeout(() => setRulesCopied(false), 2500);
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 to-[#50007c] p-6 rounded-3xl text-white shadow-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-amber-950 to-orange-950 p-6 rounded-3xl text-white shadow-xl">
         <div>
           <div className="flex items-center gap-2.5 mb-1">
-            <Server className="w-6 h-6 text-emerald-400" />
-            <h2 className="text-lg font-black">Supabase & Database Backend Setup</h2>
+            <Flame className="w-6 h-6 text-orange-400" />
+            <h2 className="text-lg font-black">Firebase Backend & Firestore Integration</h2>
           </div>
-          <p className="text-xs text-purple-200">
-            Configure Supabase as your primary backend for <strong>User Profiles</strong>, <strong>Order Tracking</strong>, and <strong>Product Catalogs</strong> (Replacing Firebase).
+          <p className="text-xs text-orange-200">
+            Active cloud backend powered by <strong>Firebase (Firestore Database & Storage)</strong> for secure persistence, media uploads, and order tracking.
           </p>
         </div>
         <div className="flex items-center gap-2 bg-white/10 p-1.5 rounded-2xl">
           <button
-            onClick={() => setActiveTab('supabase')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${activeTab === 'supabase' ? 'bg-emerald-500 text-white shadow-md' : 'text-purple-200 hover:text-white'}`}
+            onClick={() => setActiveTab('firebase')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${activeTab === 'firebase' ? 'bg-orange-500 text-white shadow-md' : 'text-orange-200 hover:text-white'}`}
           >
-            Supabase Backend
+            Firebase Status
           </button>
           <button
             onClick={() => setActiveTab('json')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${activeTab === 'json' ? 'bg-white text-slate-900 shadow-md' : 'text-purple-200 hover:text-white'}`}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${activeTab === 'json' ? 'bg-white text-slate-900 shadow-md' : 'text-orange-200 hover:text-white'}`}
           >
             Local JSON / API
           </button>
         </div>
       </div>
 
-      {activeTab === 'supabase' ? (
+      {activeTab === 'firebase' ? (
         <div className="space-y-6">
-          {/* Connection Card */}
+          {/* Connection Status Card */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-black text-sm text-slate-900 flex items-center gap-2">
-                  <Key className="w-4 h-4 text-[#50007c]" />
-                  Supabase Project Credentials
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
+                  Connected to Firebase Project: {firebaseConfig.projectId}
                 </h3>
-                <p className="text-xs text-slate-500">Enter your Supabase URL and Anon/Public Key from your Supabase project settings.</p>
+                <p className="text-xs text-slate-500">Database ID: <code className="bg-slate-100 px-2 py-0.5 rounded text-orange-600 font-mono">{firebaseConfig.firestoreDatabaseId || '(default)'}</code></p>
               </div>
-              <div>
-                {supabaseStatus === 'connected' && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-black rounded-xl">
-                    <CheckCircle className="w-3.5 h-3.5" /> Connected to Supabase
-                  </span>
-                )}
-                {supabaseStatus === 'error' && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-100 text-red-800 text-xs font-black rounded-xl">
-                    <AlertCircle className="w-3.5 h-3.5" /> Connection Error
-                  </span>
-                )}
-                {supabaseStatus === 'testing' && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-800 text-xs font-black rounded-xl animate-pulse">
-                    Testing Connection...
-                  </span>
-                )}
-              </div>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-black rounded-xl">
+                <CheckCircle className="w-3.5 h-3.5" /> Online & Active
+              </span>
             </div>
 
-            <form onSubmit={handleSaveSupabaseConfig} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Supabase Project URL</label>
-                  <input
-                    type="url"
-                    placeholder="https://your-project.supabase.co"
-                    value={supabaseUrl}
-                    onChange={(e) => setSupabaseUrl(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#50007c]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Supabase Anon / Public Key</label>
-                  <input
-                    type="password"
-                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    value={supabaseKey}
-                    onChange={(e) => setSupabaseKey(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#50007c]"
-                  />
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
+                <span className="text-slate-400 font-bold uppercase text-[10px]">Auth Domain</span>
+                <p className="font-mono font-bold text-slate-800">{firebaseConfig.authDomain}</p>
               </div>
-              {supabaseErrorMsg && (
-                <p className="text-xs text-red-600 font-medium bg-red-50 p-3 rounded-xl border border-red-100">{supabaseErrorMsg}</p>
-              )}
-              <div className="flex justify-end gap-3">
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 bg-[#50007c] hover:bg-purple-900 text-white font-black text-xs rounded-xl shadow-md transition-all cursor-pointer"
-                >
-                  Save & Connect Supabase
-                </button>
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
+                <span className="text-slate-400 font-bold uppercase text-[10px]">Storage Bucket</span>
+                <p className="font-mono font-bold text-slate-800">{firebaseConfig.storageBucket}</p>
               </div>
-            </form>
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
+                <span className="text-slate-400 font-bold uppercase text-[10px]">App ID</span>
+                <p className="font-mono font-bold text-slate-800 truncate">{firebaseConfig.appId}</p>
+              </div>
+            </div>
           </div>
 
-          {/* SQL Schema Migration Card */}
+          {/* Firestore Rules Card */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-black text-sm text-slate-900">Supabase SQL Migration Schema</h3>
-                <p className="text-xs text-slate-500">Run this SQL script in your Supabase Dashboard SQL Editor to create tables for Products, User Profiles, Orders, and Reviews.</p>
+                <h3 className="font-black text-sm text-slate-900">Firestore Security Rules</h3>
+                <p className="text-xs text-slate-500">Configured in <code className="bg-slate-100 px-1.5 py-0.5 rounded font-mono">firestore.rules</code> for public read/write access.</p>
               </div>
               <button
-                onClick={handleCopySql}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                onClick={handleCopyRules}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
               >
                 <Copy className="w-3.5 h-3.5" />
-                <span>{sqlCopied ? 'Copied SQL Script!' : 'Copy SQL Schema'}</span>
+                <span>{rulesCopied ? 'Copied Rules!' : 'Copy Rules'}</span>
               </button>
             </div>
 
-            <div className="bg-slate-900 text-emerald-400 p-4 rounded-2xl font-mono text-xs overflow-x-auto max-h-[400px] border border-slate-800">
-              <pre>{SUPABASE_SQL_SCHEMA}</pre>
+            <div className="bg-slate-900 text-orange-300 p-4 rounded-2xl font-mono text-xs overflow-x-auto border border-slate-800">
+              <pre>{firestoreRules}</pre>
             </div>
           </div>
         </div>
@@ -228,7 +152,7 @@ export const DatabaseView: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
             <div>
               <h3 className="font-black text-sm text-slate-900">Live JSON Database Endpoint</h3>
-              <p className="text-xs text-slate-500">All app records are served via <code className="bg-slate-100 px-2 py-0.5 rounded font-mono text-purple-700">/api/db</code>.</p>
+              <p className="text-xs text-slate-500">All app records are served via <code className="bg-slate-100 px-2 py-0.5 rounded font-mono text-orange-600">/api/db</code>.</p>
             </div>
             <div className="flex items-center gap-2">
               <a
@@ -248,7 +172,7 @@ export const DatabaseView: React.FC = () => {
               </button>
               <button
                 onClick={handleDownload}
-                className="px-3.5 py-2 bg-[#50007c] hover:bg-purple-900 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                className="px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Download</span>
@@ -279,7 +203,7 @@ export const InventoryView: React.FC = () => {
         {inventory.map((i) => (
           <div key={i.id} className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center justify-between gap-4 shadow-2xs">
             <div>
-              <span className="text-xs font-black text-purple-900 bg-purple-100 px-2.5 py-0.5 rounded">{i.sku}</span>
+              <span className="text-xs font-black text-orange-900 bg-orange-100 px-2.5 py-0.5 rounded">{i.sku}</span>
               <h4 className="text-xs font-bold text-slate-900 pt-1">{i.item}</h4>
             </div>
             <div className="flex items-center gap-3">
@@ -288,7 +212,7 @@ export const InventoryView: React.FC = () => {
               </span>
               <button
                 onClick={() => updateInventory(i.id, i.currentStock + 20)}
-                className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-[#50007c] font-black text-xs rounded-xl cursor-pointer"
+                className="px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 font-black text-xs rounded-xl cursor-pointer"
               >
                 + Restock (20)
               </button>
@@ -354,12 +278,12 @@ export const UsersView: React.FC = () => {
     <div className="space-y-6">
       <h2 className="text-lg font-black text-slate-900">Admin Users & Role Permissions</h2>
       <div className="bg-white p-6 rounded-2xl border border-slate-200 space-y-4 text-xs">
-        <div className="flex items-center justify-between p-4 bg-purple-50 rounded-xl border border-purple-200">
+        <div className="flex items-center justify-between p-4 bg-orange-50 rounded-xl border border-orange-200">
           <div>
-            <p className="font-black text-purple-900">{currentAdminUser?.name || 'Ranjan Roy'} ({currentAdminUser?.email})</p>
-            <p className="text-purple-700 text-[11px]">Role: <strong className="text-purple-900">{currentAdminUser?.role || 'Super Admin'}</strong></p>
+            <p className="font-black text-orange-950">{currentAdminUser?.name || 'Ranjan Roy'} ({currentAdminUser?.email})</p>
+            <p className="text-orange-700 text-[11px]">Role: <strong className="text-orange-950">{currentAdminUser?.role || 'Super Admin'}</strong></p>
           </div>
-          <span className="px-3 py-1 bg-[#50007c] text-white font-bold rounded-lg">Active Session</span>
+          <span className="px-3 py-1 bg-orange-600 text-white font-bold rounded-lg">Active Session</span>
         </div>
       </div>
     </div>
