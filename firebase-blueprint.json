@@ -1,0 +1,53 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product Entity",
+      "description": "Custom print product details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string", "maxLength": 100 },
+        "basePrice": { "type": "number" }
+      },
+      "required": ["id", "title", "category"]
+    },
+    "Order": {
+      "title": "Order Entity",
+      "description": "Customer print order",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerName": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "maxLength": 50 },
+        "totalAmount": { "type": "number" }
+      },
+      "required": ["id", "customerName", "status"]
+    },
+    "Quote": {
+      "title": "Quote Entity",
+      "description": "Custom quote inquiry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerName": { "type": "string", "maxLength": 100 },
+        "productTitle": { "type": "string", "maxLength": 200 }
+      },
+      "required": ["id", "customerName"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Print products catalog"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer orders"
+    },
+    "/quotes/{quoteId}": {
+      "schema": "Quote",
+      "description": "Customer quote requests"
+    }
+  }
+}
