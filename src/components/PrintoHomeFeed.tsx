@@ -36,8 +36,6 @@ import { ProductItem } from '../types';
 import { WHATSAPP_PRIMARY } from '../utils/whatsapp';
 import { getRecentlyViewedIds, addRecentlyViewedId } from '../utils/recentlyViewed';
 import { CATEGORIES } from '../data/products';
-import { db } from '../firebase';
-import { collection, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 
 interface PrintoHomeFeedProps {
   products: ProductItem[];
@@ -72,65 +70,46 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
   const [reviewSuccess, setReviewSuccess] = useState(false);
   const [reviewSlideIndex, setReviewSlideIndex] = useState(0);
 
-  // Fetch reviews from Firebase in real-time
+  // Fetch reviews and categories from local Express DB API
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'reviews'), (snapshot) => {
-      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      if (list.length > 0) {
-        setFirestoreReviews(list);
-      } else {
-        // Default initial reviews if none in DB yet
-        setFirestoreReviews([
-          {
-            id: 'rev-1',
-            name: 'Rahul Sharma',
-            rating: 5,
-            service: 'Visiting Cards & ID Cards',
-            comment: 'Amazing quality! Got my visiting cards printed in just 5 minutes at their Mahavir Enclave store. Super polite staff.',
-            date: 'Yesterday'
-          },
-          {
-            id: 'rev-2',
-            name: 'Priya Verma',
-            rating: 5,
-            service: 'Flex Banner & Standee',
-            comment: 'Ordered 340 GSM Star Flex for our shop inauguration. Colors are vibrant and delivered right on time. Highly recommended!',
-            date: '3 days ago'
-          },
-          {
-            id: 'rev-3',
-            name: 'Amitabh Gupta',
-            rating: 5,
-            service: 'Custom Coffee Mugs & T-Shirts',
-            comment: 'Best printing shop in Delhi NCR! Got corporate mugs printed with our logo. Exceptional finishing and pricing.',
-            date: '1 week ago'
+    async function loadFeedData() {
+      try {
+        const res = await fetch('/api/db');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.reviews && data.reviews.length > 0) {
+            setFirestoreReviews(data.reviews);
+          } else {
+            setFirestoreReviews([
+              {
+                id: 'rev-1',
+                name: 'Rahul Sharma',
+                rating: 5,
+                service: 'Visiting Cards & ID Cards',
+                comment: 'Amazing quality! Got my visiting cards printed in just 5 minutes at their Mahavir Enclave store. Super polite staff.',
+                date: 'Yesterday'
+              },
+              {
+                id: 'rev-2',
+                name: 'Priya Verma',
+                rating: 5,
+                service: 'Flex Banner & Standee',
+                comment: 'Ordered 340 GSM Star Flex for our shop inauguration. Colors are vibrant and delivered right on time. Highly recommended!',
+                date: '3 days ago'
+              }
+            ]);
           }
-        ]);
-      }
-    }, (err) => {
-      console.error("Error fetching reviews:", err);
-      // Fallback
-      setFirestoreReviews([
-        {
-          id: 'rev-1',
-          name: 'Rahul Sharma',
-          rating: 5,
-          service: 'Visiting Cards & ID Cards',
-          comment: 'Amazing quality! Got my visiting cards printed in just 5 minutes at their Mahavir Enclave store. Super polite staff.',
-          date: 'Yesterday'
-        },
-        {
-          id: 'rev-2',
-          name: 'Priya Verma',
-          rating: 5,
-          service: 'Flex Banner & Standee',
-          comment: 'Ordered 340 GSM Star Flex for our shop inauguration. Colors are vibrant and delivered right on time. Highly recommended!',
-          date: '3 days ago'
+          if (data.categories && data.categories.length > 0) {
+            setFirestoreCategories(data.categories);
+          }
         }
-      ]);
-    });
-
-    return () => unsubscribe();
+      } catch (e) {
+        console.warn('Error loading feed data from API:', e);
+      }
+    }
+    loadFeedData();
+    const interval = setInterval(loadFeedData, 3000);
+    return () => clearInterval(interval);
   }, []);
 
   // Helper to get or create persistent author ID for review management
@@ -143,20 +122,9 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
     return id;
   };
 
-  // Firestore Categories State for Explore Dedicated Page Cards
   const [firestoreCategories, setFirestoreCategories] = useState<any[]>([]);
 
-  useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'categories'), (snapshot) => {
-      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      if (list.length > 0) {
-        setFirestoreCategories(list);
-      }
-    }, (err) => console.error("Error fetching categories:", err));
-    return () => unsubscribe();
-  }, []);
-
-  // Submit new review to Firestore with authorId
+  // Submit new review to local API
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newReviewName.trim() || !newReviewComment.trim()) {
@@ -166,7 +134,8 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
 
     setSubmittingReview(true);
     try {
-      await addDoc(collection(db, 'reviews'), {
+      const newRev = {
+        id: 'rev_' + Date.now(),
         name: newReviewName.trim(),
         phone: newReviewPhone.trim(),
         rating: Number(newReviewRating),
@@ -175,9 +144,14 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
         imageUrl: newReviewImage.trim(),
         authorId: getLocalAuthorId(),
         date: 'Just now',
-        createdAt: serverTimestamp(),
         approved: true
+      };
+      await fetch(`/api/reviews/${newRev.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRev)
       });
+      setFirestoreReviews(prev => [newRev, ...prev]);
       setReviewSuccess(true);
       setTimeout(() => {
         setReviewSuccess(false);
@@ -196,13 +170,16 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
   };
 
   const handleDeleteReview = async (reviewId: string) => {
-    if (!reviewId || reviewId.startsWith('rev-')) {
-      alert('Default sample reviews cannot be deleted. Only live customer reviews stored in Firebase can be deleted.');
+    if (!reviewId || reviewId.startsWith('rev-') && reviewId === 'rev-1') {
+      alert('Default sample reviews cannot be deleted.');
       return;
     }
     if (confirm('Are you sure you want to delete this review?')) {
       try {
-        await deleteDoc(doc(db, 'reviews', reviewId));
+        await fetch(`/api/reviews/${reviewId}`, {
+          method: 'DELETE'
+        });
+        setFirestoreReviews(prev => prev.filter(r => r.id !== reviewId));
         alert('Review deleted successfully.');
       } catch (err) {
         console.error("Error deleting review:", err);

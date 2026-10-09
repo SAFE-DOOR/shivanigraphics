@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, ShoppingBag, Package, Image, FileText, Users, CreditCard, 
-  PackageOpen, Tag, Star, BarChart2, ShieldCheck, Settings, Activity, LogOut, Menu, X, ExternalLink, Layers 
+  PackageOpen, Tag, Star, BarChart2, ShieldCheck, Settings, Activity, LogOut, Menu, X, ExternalLink, Layers, Database 
 } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
 import { DashboardView } from './DashboardView';
@@ -11,7 +11,7 @@ import { CategoriesView } from './CategoriesView';
 import { OrdersView } from './OrdersView';
 import { QuotesView } from './QuotesView';
 import { CmsView } from './CmsView';
-import { InventoryView, MarketingView, ReviewsView, UsersView, AuditLogsView } from './AdditionalViews';
+import { InventoryView, MarketingView, ReviewsView, UsersView, AuditLogsView, DatabaseView } from './AdditionalViews';
 
 interface AdminLayoutProps {
   onBackToWebsite: () => void;
@@ -24,6 +24,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+    { id: 'database', label: 'Database API & JSON', icon: <Database className="w-4 h-4 text-orange-400" /> },
     { id: 'orders', label: 'Orders OMS', icon: <ShoppingBag className="w-4 h-4" /> },
     { id: 'products', label: `Products Catalog (${products.length})`, icon: <Package className="w-4 h-4" /> },
     { id: 'banners', label: 'Hero Banners', icon: <Image className="w-4 h-4" /> },
@@ -41,6 +42,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': return <DashboardView onNavigateTab={(tab) => setActiveTab(tab)} />;
+      case 'database': return <DatabaseView />;
       case 'orders': return <OrdersView />;
       case 'products': return <ProductsView />;
       case 'banners': return <BannersImagesView />;
