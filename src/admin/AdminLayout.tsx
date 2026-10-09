@@ -12,31 +12,69 @@ import { OrdersView } from './OrdersView';
 import { QuotesView } from './QuotesView';
 import { CmsView } from './CmsView';
 import { InventoryView, MarketingView, ReviewsView, UsersView, AuditLogsView, DatabaseView } from './AdditionalViews';
+import { InvoicesHistoryView } from './InvoicesHistoryView';
 
 interface AdminLayoutProps {
   onBackToWebsite: () => void;
 }
 
+interface NavItem {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => {
-  const { currentAdminUser, logout, products } = useAdmin();
+  const { currentAdminUser, logout, products, invoices } = useAdmin();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { id: 'database', label: 'Database API & JSON', icon: <Database className="w-4 h-4 text-orange-400" /> },
-    { id: 'orders', label: 'Orders OMS', icon: <ShoppingBag className="w-4 h-4" /> },
-    { id: 'products', label: `Products Catalog (${products.length})`, icon: <Package className="w-4 h-4" /> },
-    { id: 'banners', label: 'Hero Banners', icon: <Image className="w-4 h-4" /> },
-    { id: 'categories', label: 'Category Cards', icon: <Layers className="w-4 h-4" /> },
-    { id: 'images', label: 'Website Image Library', icon: <Image className="w-4 h-4" /> },
-    { id: 'quotes', label: 'Quote Requests', icon: <FileText className="w-4 h-4" /> },
-    { id: 'inventory', label: 'Inventory Stock', icon: <PackageOpen className="w-4 h-4" /> },
-    { id: 'marketing', label: 'Coupons & Offers', icon: <Tag className="w-4 h-4" /> },
-    { id: 'reviews', label: 'Customer Reviews', icon: <Star className="w-4 h-4" /> },
-    { id: 'cms', label: 'Website CMS Text', icon: <Settings className="w-4 h-4" /> },
-    { id: 'users', label: 'Admin Roles', icon: <Users className="w-4 h-4" /> },
-    { id: 'audit', label: 'Activity Logs', icon: <Activity className="w-4 h-4" /> },
+  const navSections: NavSection[] = [
+    {
+      title: 'Overview',
+      items: [
+        { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+        { id: 'database', label: 'Database & JSON', icon: <Database className="w-4 h-4 text-orange-400" /> },
+      ]
+    },
+    {
+      title: 'Operations',
+      items: [
+        { id: 'orders', label: 'Orders OMS', icon: <ShoppingBag className="w-4 h-4" /> },
+        { id: 'invoices', label: `Invoice History (${invoices.length})`, icon: <FileText className="w-4 h-4 text-purple-400" /> },
+        { id: 'quotes', label: 'Quote Requests', icon: <FileText className="w-4 h-4" /> },
+      ]
+    },
+    {
+      title: 'Catalog & Banners',
+      items: [
+        { id: 'products', label: `Products (${products.length})`, icon: <Package className="w-4 h-4" /> },
+        { id: 'banners', label: 'Hero Banners', icon: <Image className="w-4 h-4" /> },
+        { id: 'categories', label: 'Category Cards', icon: <Layers className="w-4 h-4" /> },
+        { id: 'images', label: 'Image Library', icon: <Image className="w-4 h-4" /> },
+      ]
+    },
+    {
+      title: 'Marketing & Stock',
+      items: [
+        { id: 'inventory', label: 'Inventory Stock', icon: <PackageOpen className="w-4 h-4" /> },
+        { id: 'marketing', label: 'Coupons & Offers', icon: <Tag className="w-4 h-4" /> },
+        { id: 'reviews', label: 'Customer Reviews', icon: <Star className="w-4 h-4" /> },
+      ]
+    },
+    {
+      title: 'System & Admin',
+      items: [
+        { id: 'cms', label: 'Website CMS Text', icon: <Settings className="w-4 h-4" /> },
+        { id: 'users', label: 'Admin Roles', icon: <Users className="w-4 h-4" /> },
+        { id: 'audit', label: 'Activity Logs', icon: <Activity className="w-4 h-4" /> },
+      ]
+    }
   ];
 
   const renderContent = () => {
@@ -44,6 +82,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
       case 'dashboard': return <DashboardView onNavigateTab={(tab) => setActiveTab(tab)} />;
       case 'database': return <DatabaseView />;
       case 'orders': return <OrdersView />;
+      case 'invoices': return <InvoicesHistoryView />;
       case 'products': return <ProductsView />;
       case 'banners': return <BannersImagesView />;
       case 'categories': return <CategoriesView />;
@@ -62,44 +101,51 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans text-slate-900 selection:bg-purple-600 selection:text-white">
       
-      {/* Desktop Sidebar */}
+      {/* Desktop Vertical Sidebar */}
       <aside className="hidden lg:flex flex-col w-72 bg-slate-900 text-slate-300 border-r border-slate-800 shrink-0">
         <div className="p-5 border-b border-slate-800 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#50007c] to-orange-500 flex items-center justify-center text-white font-black shadow-md">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#50007c] to-orange-500 flex items-center justify-center text-white font-black shadow-lg">
             SG
           </div>
           <div>
             <h3 className="text-white font-black text-sm tracking-tight">Shivani Graphics</h3>
-            <p className="text-[10px] text-purple-400 uppercase tracking-wider font-bold">Master Admin Studio</p>
+            <p className="text-[10px] text-purple-400 uppercase tracking-widest font-bold">Master Admin Studio</p>
           </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === item.id ? 'bg-[#50007c] text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
+        <nav className="flex-1 p-4 space-y-5 overflow-y-auto">
+          {navSections.map((section, idx) => (
+            <div key={idx} className="space-y-1">
+              <h4 className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">{section.title}</h4>
+              {section.items.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeTab === item.id 
+                      ? 'bg-gradient-to-r from-[#50007c] to-purple-800 text-white shadow-lg shadow-purple-950/40' 
+                      : 'text-slate-400 hover:bg-slate-800/80 hover:text-white'
+                  }`}
+                >
+                  {item.icon}
+                  <span className="truncate">{item.label}</span>
+                </button>
+              ))}
+            </div>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-800 space-y-2">
+        <div className="p-4 border-t border-slate-800 space-y-2 bg-slate-950/40">
           <button
             onClick={onBackToWebsite}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer shadow-sm"
           >
-            <ExternalLink className="w-4 h-4" />
+            <ExternalLink className="w-4 h-4 text-orange-400" />
             <span>Preview Public Website</span>
           </button>
           <button
             onClick={logout}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors cursor-pointer"
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-red-400 hover:bg-red-950/50 hover:text-red-300 transition-colors cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
             <span>Logout Studio</span>
@@ -109,9 +155,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
 
       {/* Mobile Header & Drawer */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-white border-b border-slate-200 px-4 py-3.5 flex items-center justify-between lg:hidden sticky top-0 z-40">
+        <header className="bg-white border-b border-slate-200 px-4 py-3.5 flex items-center justify-between lg:hidden sticky top-0 z-40 shadow-sm">
           <div className="flex items-center gap-3">
-            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 rounded-xl bg-slate-100 text-slate-700">
+            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200">
               <Menu className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2">
@@ -126,25 +172,30 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
 
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-50 bg-black/70 flex lg:hidden">
-            <div className="w-72 bg-slate-900 text-slate-300 flex flex-col h-full p-4 space-y-2">
+            <div className="w-72 bg-slate-900 text-slate-300 flex flex-col h-full p-4 space-y-4 overflow-y-auto">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                 <span className="text-white font-black text-sm">Navigation Menu</span>
                 <button onClick={() => setIsMobileMenuOpen(false)} className="p-1 text-slate-400">
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <nav className="flex-1 space-y-1 overflow-y-auto">
-                {menuItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
-                    className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${
-                      activeTab === item.id ? 'bg-[#50007c] text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                    }`}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </button>
+              <nav className="flex-1 space-y-5">
+                {navSections.map((section, idx) => (
+                  <div key={idx} className="space-y-1">
+                    <h4 className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">{section.title}</h4>
+                    {section.items.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                          activeTab === item.id ? 'bg-[#50007c] text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                        }`}
+                      >
+                        {item.icon}
+                        <span>{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 ))}
               </nav>
             </div>

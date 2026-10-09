@@ -85,6 +85,21 @@ export interface AuditLog {
   time: string;
 }
 
+export interface InvoiceRecord {
+  id: string;
+  invoiceNumber?: string;
+  customerName: string;
+  phone: string;
+  email?: string;
+  address: string;
+  productTitle: string;
+  quantity: number;
+  options?: string;
+  totalAmount: number;
+  paymentStatus: string;
+  date: string;
+}
+
 interface AdminContextType {
   isAdminLoggedIn: boolean;
   currentAdminUser: AdminUser | null;
@@ -96,6 +111,9 @@ interface AdminContextType {
   deleteProduct: (id: string) => Promise<void>;
   orders: AdminOrder[];
   updateOrderStatus: (id: string, status: AdminOrder['status']) => Promise<void>;
+  invoices: InvoiceRecord[];
+  saveInvoice: (invoice: InvoiceRecord) => Promise<void>;
+  deleteInvoice: (id: string) => Promise<void>;
   quotes: AdminQuote[];
   updateQuoteStatus: (id: string, status: AdminQuote['status'], price?: number) => Promise<void>;
   websiteImages: WebsiteImage[];
@@ -132,6 +150,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [products, setProducts] = useState<ProductItem[]>(PRODUCTS);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
   const [quotes, setQuotes] = useState<AdminQuote[]>([]);
   const [websiteImages, setWebsiteImages] = useState<WebsiteImage[]>([]);
   const [websiteContent, setWebsiteContent] = useState({
@@ -165,6 +184,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const data = await res.json();
           if (data.products && data.products.length > 0) setProducts(data.products);
           if (data.orders) setOrders(data.orders);
+          if (data.invoices) setInvoices(data.invoices);
           if (data.quotes) setQuotes(data.quotes);
           if (data.reviews) setReviews(data.reviews);
           if (data.images) setWebsiteImages(data.images);
@@ -261,6 +281,32 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setOrders(prev => prev.map(o => o.id === id ? updated : o));
       }
       logAction(`Updated order ${id} status to ${status}`, currentAdminUser?.name || 'Admin');
+    } catch (e) {
+      console.error('API sync error:', e);
+    }
+  };
+
+  const saveInvoice = async (invoice: InvoiceRecord) => {
+    try {
+      await fetch(`/api/invoices/${invoice.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(invoice)
+      });
+      setInvoices(prev => [invoice, ...prev.filter(i => i.id !== invoice.id)]);
+      logAction(`Saved invoice: ${invoice.id}`, currentAdminUser?.name || 'Admin');
+    } catch (e) {
+      console.error('API sync error:', e);
+    }
+  };
+
+  const deleteInvoice = async (id: string) => {
+    try {
+      await fetch(`/api/invoices/${id}`, {
+        method: 'DELETE'
+      });
+      setInvoices(prev => prev.filter(i => i.id !== id));
+      logAction(`Deleted invoice: ${id}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
       console.error('API sync error:', e);
     }
@@ -402,6 +448,9 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       deleteProduct,
       orders,
       updateOrderStatus,
+      invoices,
+      saveInvoice,
+      deleteInvoice,
       quotes,
       updateQuoteStatus,
       websiteImages,

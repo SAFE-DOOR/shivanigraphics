@@ -4,7 +4,7 @@ import { useAdmin, AdminOrder } from '../context/AdminContext';
 import { InvoiceModal } from './InvoiceModal';
 
 export const OrdersView: React.FC = () => {
-  const { orders, updateOrderStatus } = useAdmin();
+  const { orders, updateOrderStatus, saveInvoice } = useAdmin();
   const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState<AdminOrder | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('All');
 
@@ -66,7 +66,10 @@ export const OrdersView: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="text-xs font-black text-slate-900">₹{ord.totalAmount}</span>
                 <button
-                  onClick={() => setSelectedOrderForInvoice(ord)}
+                  onClick={() => {
+                    saveInvoice(ord);
+                    setSelectedOrderForInvoice(ord);
+                  }}
                   className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-[#50007c] font-black text-xs rounded-xl flex items-center gap-1 cursor-pointer"
                   title="Generate Tax Invoice"
                 >
