@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Printer, Download, CheckCircle, ShieldCheck } from 'lucide-react';
 import { AdminOrder } from '../context/AdminContext';
+import html2pdf from 'html2pdf.js';
 
 interface InvoiceModalProps {
   order: AdminOrder;
@@ -10,6 +11,19 @@ interface InvoiceModalProps {
 export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) => {
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPdf = () => {
+    const element = document.getElementById('invoice-pdf-container');
+    if (!element) return;
+    const opt = {
+      margin: 10,
+      filename: `Shivani_Graphics_Invoice_${order.id}.pdf`,
+      image: { type: 'jpeg' as const, quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    (html2pdf() as any).from(element).set(opt).save();
   };
 
   return (
@@ -28,10 +42,16 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={handleDownloadPdf}
+              className="px-3.5 py-2 bg-[#50007c] hover:bg-purple-900 text-white font-black text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
+            >
+              <Download className="w-4 h-4" /> Download PDF
+            </button>
+            <button
               onClick={handlePrint}
               className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 text-[#50007c] font-black text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
             >
-              <Printer className="w-4 h-4" /> Print / PDF
+              <Printer className="w-4 h-4" /> Print
             </button>
             <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer">
               <X className="w-5 h-5" />
@@ -39,19 +59,21 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
           </div>
         </div>
 
-        <div className="space-y-4 text-xs text-slate-700">
+        {/* Printable / Downloadable Container */}
+        <div id="invoice-pdf-container" className="space-y-4 text-xs text-slate-700 p-2 bg-white">
           <div className="flex justify-between bg-slate-50 p-4 rounded-2xl border border-slate-200">
             <div>
               <p className="font-bold text-slate-900">Billed To:</p>
-              <p>{order.customerName}</p>
+              <p className="font-semibold text-slate-800">{order.customerName}</p>
               <p>{order.address}</p>
               <p>Phone: {order.phone}</p>
+              {order.email && <p>Email: {order.email}</p>}
             </div>
             <div className="text-right">
               <p className="font-bold text-slate-900">Invoice Details:</p>
-              <p><strong className="text-purple-800">Order ID:</strong> {order.id}</p>
+              <p><strong className="text-purple-800">Order/Inv ID:</strong> {order.id}</p>
               <p><strong className="text-purple-800">Date:</strong> {order.date}</p>
-              <p><strong className="text-purple-800">Status:</strong> {order.paymentStatus}</p>
+              <p><strong className="text-purple-800">Payment:</strong> {order.paymentStatus}</p>
             </div>
           </div>
 
@@ -67,7 +89,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
               <tr className="border-b border-slate-100">
                 <td className="py-3 font-semibold text-slate-900">
                   {order.productTitle}
-                  <div className="text-[11px] text-slate-500 font-normal">Options: {order.options}</div>
+                  <div className="text-[11px] text-slate-500 font-normal">Options: {order.options || 'Standard Commercial Print'}</div>
                 </td>
                 <td className="py-3 text-center">{order.quantity}</td>
                 <td className="py-3 text-right font-black">₹{order.totalAmount}</td>
