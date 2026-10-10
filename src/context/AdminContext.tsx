@@ -20,7 +20,7 @@ export interface AdminOrder {
   quantity: number;
   options: string;
   totalAmount: number;
-  status: 'New' | 'Confirmed' | 'Designing' | 'Printing' | 'Ready' | 'Out for Delivery' | 'Delivered' | 'Cancelled';
+  status: 'New' | 'Confirmed' | 'Design Pending' | 'Designing' | 'Printing' | 'Quality Check' | 'Ready' | 'Ready for Pickup' | 'Out for Delivery' | 'Delivered' | 'Cancelled';
   paymentStatus: 'Paid' | 'Pending' | 'Failed' | 'Refunded';
   date: string;
   files?: string[];
@@ -114,6 +114,7 @@ interface AdminContextType {
   orders: AdminOrder[];
   updateOrderStatus: (id: string, status: AdminOrder['status']) => Promise<void>;
   saveOrder: (order: AdminOrder) => Promise<void>;
+  deleteOrder: (id: string) => Promise<void>;
   invoices: InvoiceRecord[];
   saveInvoice: (invoice: InvoiceRecord) => Promise<void>;
   deleteInvoice: (id: string) => Promise<void>;
@@ -433,6 +434,15 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const deleteOrder = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'orders', id));
+      logAction(`Deleted order ID: ${id}`, currentAdminUser?.name || 'Admin');
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, `orders/${id}`);
+    }
+  };
+
   const saveInvoice = async (invoice: InvoiceRecord) => {
     try {
       await setDoc(doc(db, 'invoices', invoice.id), invoice, { merge: true });
@@ -567,6 +577,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       orders,
       updateOrderStatus,
       saveOrder,
+      deleteOrder,
       invoices,
       saveInvoice,
       deleteInvoice,

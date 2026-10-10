@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Printer, Plus, CheckCircle, Clock, Search, X, Hash } from 'lucide-react';
+import { ShoppingBag, Printer, Plus, CheckCircle, Clock, Search, X, Hash, Trash2 } from 'lucide-react';
 import { useAdmin, AdminOrder } from '../context/AdminContext';
 import { InvoiceModal } from './InvoiceModal';
 
 export const OrdersView: React.FC = () => {
-  const { orders, updateOrderStatus, saveOrder, saveInvoice } = useAdmin();
+  const { orders, updateOrderStatus, saveOrder, saveInvoice, deleteOrder } = useAdmin();
   const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState<AdminOrder | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [isCreatingOrder, setIsCreatingOrder] = useState<boolean>(false);
@@ -123,6 +123,17 @@ export const OrdersView: React.FC = () => {
                   title="Generate Tax Invoice"
                 >
                   <Printer className="w-3.5 h-3.5" /> Invoice
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to delete order ${ord.id}?`)) {
+                      deleteOrder(ord.id);
+                    }
+                  }}
+                  className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl cursor-pointer"
+                  title="Delete Order"
+                >
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>

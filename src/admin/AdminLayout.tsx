@@ -15,6 +15,7 @@ import { InventoryView, MarketingView, ReviewsView, UsersView, AuditLogsView, Da
 import { InvoicesHistoryView } from './InvoicesHistoryView';
 import { AnalyticsView } from './AnalyticsView';
 import { CustomersView } from './CustomersView';
+import { CrmOrdersView } from './CrmOrdersView';
 
 interface AdminLayoutProps {
   onBackToWebsite: () => void;
@@ -49,6 +50,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
       title: 'Operations',
       items: [
         { id: 'orders', label: 'Orders & Tracking ID', icon: <ShoppingBag className="w-4 h-4" /> },
+        { id: 'crm-orders', label: 'CRM Orders Pipeline', icon: <Layers className="w-4 h-4 text-orange-400" /> },
         { id: 'customers', label: 'Customer Database', icon: <Users className="w-4 h-4 text-purple-400" /> },
         { id: 'invoices', label: `Invoice History (${invoices.length})`, icon: <FileText className="w-4 h-4" /> },
         { id: 'quotes', label: 'Quote Requests', icon: <FileText className="w-4 h-4" /> },
@@ -87,6 +89,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
       case 'analytics': return <AnalyticsView />;
       case 'database': return <DatabaseView />;
       case 'orders': return <OrdersView />;
+      case 'crm-orders': return <CrmOrdersView />;
       case 'customers': return <CustomersView />;
       case 'invoices': return <InvoicesHistoryView />;
       case 'products': return <ProductsView />;

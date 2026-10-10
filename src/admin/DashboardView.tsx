@@ -13,7 +13,7 @@ interface DashboardViewProps {
 export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) => {
   const { orders, products, quotes, inventory, reviews } = useAdmin();
 
-  const totalRevenue = orders.reduce((acc, o) => acc + (o.totalAmount || 0), 48250);
+  const totalRevenue = orders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
   const newOrdersCount = orders.filter(o => o.status === 'New').length;
   const processingCount = orders.filter(o => o.status === 'Printing' || o.status === 'Confirmed' || o.status === 'Designing').length;
   const completedCount = orders.filter(o => o.status === 'Delivered').length;
