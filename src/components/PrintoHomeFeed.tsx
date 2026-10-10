@@ -36,6 +36,7 @@ import { ProductItem } from '../types';
 import { WHATSAPP_PRIMARY } from '../utils/whatsapp';
 import { getRecentlyViewedIds, addRecentlyViewedId } from '../utils/recentlyViewed';
 import { CATEGORIES } from '../data/products';
+import { useAdmin } from '../context/AdminContext';
 
 interface PrintoHomeFeedProps {
   products: ProductItem[];
@@ -57,8 +58,7 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
   const [isPaused, setIsPaused] = useState(false);
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>(() => getRecentlyViewedIds());
 
-  // Firestore Reviews State
-  const [firestoreReviews, setFirestoreReviews] = useState<any[]>([]);
+  const { reviews: firestoreReviews, addPublicReview, deleteReview } = useAdmin();
   const approvedReviews = firestoreReviews.filter(r => r.approved !== false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [newReviewName, setNewReviewName] = useState('');
@@ -71,49 +71,8 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
   const [reviewSuccess, setReviewSuccess] = useState(false);
   const [reviewSlideIndex, setReviewSlideIndex] = useState(0);
 
-  // Fetch reviews and categories from local Express DB API
-  useEffect(() => {
-    async function loadFeedData() {
-      try {
-        const res = await fetch('/api/db');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.reviews && data.reviews.length > 0) {
-            setFirestoreReviews(data.reviews);
-          } else {
-            setFirestoreReviews([
-              {
-                id: 'rev-1',
-                name: 'Rahul Sharma',
-                rating: 5,
-                service: 'Visiting Cards & ID Cards',
-                comment: 'Amazing quality! Got my visiting cards printed in just 5 minutes at their Mahavir Enclave store. Super polite staff.',
-                date: 'Yesterday'
-              },
-              {
-                id: 'rev-2',
-                name: 'Priya Verma',
-                rating: 5,
-                service: 'Flex Banner & Standee',
-                comment: 'Ordered 340 GSM Star Flex for our shop inauguration. Colors are vibrant and delivered right on time. Highly recommended!',
-                date: '3 days ago'
-              }
-            ]);
-          }
-          if (data.categories && data.categories.length > 0) {
-            setFirestoreCategories(data.categories);
-          }
-        }
-      } catch (e) {
-        console.warn('Error loading feed data from API:', e);
-      }
-    }
-    loadFeedData();
-    const interval = setInterval(loadFeedData, 3000);
-    return () => clearInterval(interval);
-  }, []);
+  const [firestoreCategories] = useState<any[]>([]);
 
-  // Helper to get or create persistent author ID for review management
   const getLocalAuthorId = () => {
     let id = localStorage.getItem('printo_author_id');
     if (!id) {
@@ -123,9 +82,7 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
     return id;
   };
 
-  const [firestoreCategories, setFirestoreCategories] = useState<any[]>([]);
-
-  // Submit new review to local API
+  // Submit new review to Firestore via AdminContext
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newReviewName.trim() || !newReviewComment.trim()) {
@@ -135,24 +92,12 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
 
     setSubmittingReview(true);
     try {
-      const newRev = {
-        id: 'rev_' + Date.now(),
+      await addPublicReview({
         name: newReviewName.trim(),
-        phone: newReviewPhone.trim(),
         rating: Number(newReviewRating),
-        service: newReviewService,
-        comment: newReviewComment.trim(),
-        imageUrl: newReviewImage.trim(),
-        authorId: getLocalAuthorId(),
-        date: 'Just now',
-        approved: true
-      };
-      await fetch(`/api/reviews/${newRev.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newRev)
+        review: newReviewComment.trim(),
+        photo: newReviewImage.trim()
       });
-      setFirestoreReviews(prev => [newRev, ...prev]);
       setReviewSuccess(true);
       setTimeout(() => {
         setReviewSuccess(false);
@@ -171,16 +116,9 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
   };
 
   const handleDeleteReview = async (reviewId: string) => {
-    if (!reviewId || reviewId.startsWith('rev-') && reviewId === 'rev-1') {
-      alert('Default sample reviews cannot be deleted.');
-      return;
-    }
     if (confirm('Are you sure you want to delete this review?')) {
       try {
-        await fetch(`/api/reviews/${reviewId}`, {
-          method: 'DELETE'
-        });
-        setFirestoreReviews(prev => prev.filter(r => r.id !== reviewId));
+        await deleteReview(reviewId);
         alert('Review deleted successfully.');
       } catch (err) {
         console.error("Error deleting review:", err);
@@ -828,16 +766,16 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
           </div>
 
           {/* Customer Printed Photos Gallery */}
-          {approvedReviews.some(r => r.imageUrl) && (
+          {approvedReviews.some(r => r.photo) && (
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
               <div className="flex items-center gap-2">
                 <Camera className="w-4 h-4 text-[#50007c]" />
-                <h5 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider">Customer Printed Photos Gallery ({approvedReviews.filter(r => r.imageUrl).length})</h5>
+                <h5 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider">Customer Printed Photos Gallery ({approvedReviews.filter(r => r.photo).length})</h5>
               </div>
               <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
-                {approvedReviews.filter(r => r.imageUrl).map((rev, idx) => (
+                {approvedReviews.filter(r => r.photo).map((rev, idx) => (
                   <div key={idx} className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden border border-slate-200 shrink-0 bg-slate-50 group shadow-2xs">
-                    <img src={rev.imageUrl} alt={rev.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    <img src={rev.photo} alt={rev.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                     <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-white text-[10px] truncate font-medium">
                       {rev.name}
                     </div>
@@ -912,7 +850,7 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
                           </div>
 
                           <p className="text-sm sm:text-base text-slate-800 leading-relaxed italic font-medium">
-                            "{currentReview.comment}"
+                            "{currentReview.review}"
                           </p>
 
                           <div className="flex items-center gap-3 pt-2">
@@ -922,14 +860,14 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
                                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                               </h4>
                               <p className="text-[10px] text-[#50007c] font-semibold">
-                                {currentReview.service || 'Custom Printing'}
+                                {'Custom Printing & Signage'}
                               </p>
                             </div>
                             <div className="flex items-center gap-2 ml-auto">
                               <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-md">
                                 ✓ Verified Buyer
                               </span>
-                              {currentReview.id && !currentReview.id.startsWith('rev-') && (currentReview.authorId === getLocalAuthorId() || !currentReview.authorId) && (
+                              {currentReview.id && (
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteReview(currentReview.id)}
@@ -943,9 +881,9 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
                           </div>
                         </div>
 
-                        {currentReview.imageUrl && (
+                        {currentReview.photo && (
                           <div className="w-full md:w-48 h-40 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 shadow-xs">
-                            <img src={currentReview.imageUrl} alt="Customer print upload" className="w-full h-full object-cover" />
+                            <img src={currentReview.photo} alt="Customer print upload" className="w-full h-full object-cover" />
                           </div>
                         )}
                       </motion.div>

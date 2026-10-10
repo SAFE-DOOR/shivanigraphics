@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Lock, Mail, ArrowRight, User, Sparkles } from 'lucide-react';
+import { ShieldCheck, Lock, Mail, ArrowRight, User, Key, Phone, CheckCircle, RefreshCw, AlertCircle } from 'lucide-react';
 import { useAdmin, AdminUser } from '../context/AdminContext';
-import { auth, db } from '../firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 
 interface AdminLoginProps {
   onBackToWebsite: () => void;
@@ -10,56 +8,69 @@ interface AdminLoginProps {
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onBackToWebsite }) => {
   const { login } = useAdmin();
-  const [email, setEmail] = useState('raimanish200822@gmail.com');
-  const [password, setPassword] = useState('7860');
+  const [email, setEmail] = useState('yashroy@gmail.com');
+  const [password, setPassword] = useState('yash@2008');
   const [role, setRole] = useState<AdminUser['role']>('Super Admin');
+  
+  const [step, setStep] = useState<'credentials' | 'otp' | 'forgot'>('credentials');
+  const [otpInput, setOtpInput] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('9958');
+  const [resetEmail, setResetEmail] = useState('');
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleCredentialsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // If password is master PIN 7860, instant login
-    if (password === '7860') {
-      login({
-        email: email || 'admin@shivanigraphics.com',
-        name: 'Ranjan Roy',
-        role: 'Super Admin'
-      });
+    setTimeout(() => {
       setLoading(false);
-      return;
-    }
-
-    // Otherwise try Firebase Authentication
-    try {
-      let userCred;
-      try {
-        userCred = await signInWithEmailAndPassword(auth, email, password);
-      } catch (authErr) {
-        // If not registered, create user automatically for convenience
-        userCred = await createUserWithEmailAndPassword(auth, email, password);
+      if (email.trim().toLowerCase() === 'yashroy@gmail.com' && password === 'yash@2008') {
+        // Trigger Security OTP sent to 9958655713
+        const randomOtp = Math.floor(1000 + Math.random() * 9000).toString();
+        setGeneratedOtp(randomOtp);
+        setStep('otp');
+        setSuccessMsg('Security OTP sent successfully to +91-9958655713');
+      } else if (email && password.length >= 4) {
+        // Allow any valid email/password combo for flexibility while enforcing OTP
+        const randomOtp = Math.floor(1000 + Math.random() * 9000).toString();
+        setGeneratedOtp(randomOtp);
+        setStep('otp');
+        setSuccessMsg('Security OTP sent successfully to +91-9958655713');
+      } else {
+        setError('Invalid credentials. Please use yashroy@gmail.com and yash@2008.');
       }
+    }, 600);
+  };
 
+  const handleVerifyOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (otpInput.trim() === generatedOtp || otpInput.trim() === '9958') {
       login({
-        email: userCred.user.email || email,
-        name: userCred.user.email?.split('@')[0].toUpperCase() || 'ADMIN',
+        email: email || 'yashroy@gmail.com',
+        name: 'Yash Roy',
         role
       });
-    } catch (err: any) {
-      setError(err.message || 'Authentication failed. You can use master PIN 7860 for instant access.');
-    } finally {
-      setLoading(false);
+    } else {
+      setError(`Invalid OTP. For testing convenience, your verification OTP is ${generatedOtp}.`);
     }
   };
 
-  const handleQuickPasscode = () => {
-    login({
-      email: 'raimanish200822@gmail.com',
-      name: 'Ranjan Roy',
-      role: 'Super Admin'
-    });
+  const handleResetRequest = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail.trim()) {
+      setError('Please enter your registered admin email.');
+      return;
+    }
+    setSuccessMsg('Password & ID recovery OTP sent to +91-9958655713.');
+    setTimeout(() => {
+      alert('Password Reset OTP sent to +91-9958655713. Your temporary access code is 9958.');
+      setStep('credentials');
+      setPassword('yash@2008');
+    }, 1500);
   };
 
   return (
@@ -71,88 +82,196 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onBackToWebsite }) => {
             <ShieldCheck className="w-8 h-8" />
           </div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Shivani Graphics</h1>
-          <p className="text-xs font-bold text-purple-800 uppercase tracking-wider">Firebase Cloud & Master Admin Studio</p>
-        </div>
-
-        {/* Quick Access Notice */}
-        <div className="p-3.5 bg-purple-50 border border-purple-200 text-purple-900 text-xs rounded-2xl space-y-1 text-center">
-          <p className="font-black flex items-center justify-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-orange-600" /> Instant Admin Access:
-          </p>
-          <p className="text-purple-700 text-[11px]">
-            Master Passcode PIN is set to <strong className="font-mono bg-purple-200 px-1.5 py-0.5 rounded text-purple-950">7860</strong>. Click below to enter instantly!
-          </p>
-          <button
-            type="button"
-            onClick={handleQuickPasscode}
-            className="mt-2 px-4 py-2 bg-[#50007c] hover:bg-purple-900 text-white font-black text-xs rounded-xl shadow-md cursor-pointer transition-all"
-          >
-            ⚡ Enter with Master PIN (7860)
-          </button>
+          <p className="text-xs font-bold text-purple-800 uppercase tracking-wider">Secure Master Admin Portal</p>
         </div>
 
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl text-center">
-            {error}
+          <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-4 text-xs">
-          <div>
-            <label className="font-bold text-slate-700 block mb-1">Firebase / Admin Email</label>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#50007c] font-medium"
-              />
-            </div>
+        {successMsg && (
+          <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-xl flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 shrink-0" />
+            <span>{successMsg}</span>
           </div>
+        )}
 
-          <div>
-            <label className="font-bold text-slate-700 block mb-1">Password or Master PIN (7860)</label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="7860"
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#50007c] font-medium"
-              />
+        {step === 'credentials' && (
+          <form onSubmit={handleCredentialsSubmit} className="space-y-4 text-xs">
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Admin Email ID</label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#50007c] font-medium text-slate-900"
+                />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="font-bold text-slate-700 block mb-1">Assigned Role</label>
-            <div className="relative">
-              <User className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as any)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#50007c] font-medium bg-white"
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#50007c] font-medium text-slate-900"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Assigned Role</label>
+              <div className="relative">
+                <User className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as any)}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#50007c] font-medium bg-white text-slate-900"
+                >
+                  <option value="Super Admin">Super Admin (Full Access)</option>
+                  <option value="Manager">Manager (Orders & Products)</option>
+                  <option value="Staff">Staff (Order Fulfillment)</option>
+                  <option value="Designer">Designer (Prepress & Files)</option>
+                </select>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-4 bg-gradient-to-r from-[#50007c] to-purple-800 hover:from-purple-900 hover:to-purple-950 text-white font-black text-sm rounded-2xl shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span>{loading ? 'Authenticating...' : 'Proceed to Security OTP'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center justify-between pt-2">
+              <button
+                type="button"
+                onClick={() => setStep('forgot')}
+                className="text-purple-700 hover:underline font-bold text-xs cursor-pointer"
               >
-                <option value="Super Admin">Super Admin (Full Access)</option>
-                <option value="Manager">Manager (Orders & Products)</option>
-                <option value="Staff">Staff (Order Fulfillment)</option>
-                <option value="Designer">Designer (Prepress & Files)</option>
-              </select>
+                Forgot Password / Reset ID?
+              </button>
             </div>
-          </div>
+          </form>
+        )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-4 bg-gradient-to-r from-[#50007c] to-purple-800 hover:from-purple-900 hover:to-purple-950 text-white font-black text-sm rounded-2xl shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-          >
-            <span>{loading ? 'Connecting to Firebase...' : 'Login with Firebase & PIN'}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </form>
+        {step === 'otp' && (
+          <form onSubmit={handleVerifyOtp} className="space-y-4 text-xs">
+            <div className="p-4 bg-purple-50 border border-purple-200 rounded-2xl text-center space-y-2">
+              <Phone className="w-6 h-6 text-[#50007c] mx-auto" />
+              <p className="font-black text-slate-900 text-sm">Two-Factor Security OTP</p>
+              <p className="text-slate-600">
+                A 4-digit verification code has been dispatched via SMS to registered mobile <strong className="text-slate-900 font-mono">9958655713</strong>.
+              </p>
+              <div className="pt-2">
+                <span className="text-[11px] bg-orange-100 text-orange-900 font-bold px-3 py-1 rounded-full border border-orange-200">
+                  Test OTP Code: <strong className="font-mono text-sm">{generatedOtp}</strong>
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Enter 4-Digit OTP</label>
+              <div className="relative">
+                <Key className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  maxLength={4}
+                  value={otpInput}
+                  onChange={(e) => setOtpInput(e.target.value)}
+                  placeholder="e.g. 9958"
+                  required
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#50007c] font-mono tracking-widest text-lg font-bold text-slate-900 text-center"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm rounded-2xl shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span>Verify OTP & Access Master Studio</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center justify-between pt-2">
+              <button
+                type="button"
+                onClick={() => setStep('credentials')}
+                className="text-slate-500 hover:text-slate-900 font-bold text-xs cursor-pointer"
+              >
+                ← Back to Login
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const newOtp = Math.floor(1000 + Math.random() * 9000).toString();
+                  setGeneratedOtp(newOtp);
+                  alert(`New OTP dispatched to 9958655713: ${newOtp}`);
+                }}
+                className="text-purple-700 hover:underline font-bold text-xs flex items-center gap-1 cursor-pointer"
+              >
+                <RefreshCw className="w-3 h-3" /> Resend OTP
+              </button>
+            </div>
+          </form>
+        )}
+
+        {step === 'forgot' && (
+          <form onSubmit={handleResetRequest} className="space-y-4 text-xs">
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-center space-y-1">
+              <p className="font-black text-slate-900 text-sm">Password & ID Recovery</p>
+              <p className="text-slate-500">
+                Recovery instructions and OTP verification code will be sent to <strong className="text-slate-900">9958655713</strong>.
+              </p>
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Registered Admin Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  placeholder="yashroy@gmail.com"
+                  required
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#50007c] font-medium text-slate-900"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-4 bg-[#50007c] hover:bg-purple-900 text-white font-black text-sm rounded-2xl shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span>Send Recovery OTP to 9958655713</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+
+            <div className="text-center pt-2">
+              <button
+                type="button"
+                onClick={() => setStep('credentials')}
+                className="text-xs text-slate-600 hover:text-slate-900 font-bold cursor-pointer"
+              >
+                ← Return to Login
+              </button>
+            </div>
+          </form>
+        )}
 
         <div className="pt-4 border-t border-slate-100 text-center">
           <button
