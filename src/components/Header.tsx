@@ -35,7 +35,7 @@ interface HeaderProps {
   onNavigateHome: () => void;
   onNavigateTrack: () => void;
   onNavigateAbout: () => void;
-  onNavigateGallery: () => void;
+  onNavigateAdmin?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -51,7 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateHome,
   onNavigateTrack,
   onNavigateAbout,
-  onNavigateGallery
+  onNavigateAdmin
 }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -107,22 +107,23 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Center-Left: Shivani Graphics Brand Logo & Two-Color Text */}
+          {/* Center-Left: Shivani Graphics Brand Logo */}
           <div className="flex items-center">
             <button 
               type="button"
               onClick={onNavigateHome}
-              className="flex items-center gap-2.5 sm:gap-3 group cursor-pointer text-left"
+              className="flex items-center gap-2 sm:gap-2.5 group cursor-pointer text-left"
             >
-              <div className="h-11 sm:h-14 rounded-lg overflow-hidden bg-white flex items-center shadow-xs group-hover:scale-105 transition-transform">
-                <img src="https://img.sanishtech.com/u/65c843b363e7b4f65c6efab5a16570b4.jpg" alt="Shivani Graphics" className="h-full w-auto object-contain" />
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-[#50007c] via-purple-700 to-orange-500 flex items-center justify-center text-white font-black text-xs sm:text-sm shadow-xs group-hover:scale-105 transition-transform">
+                SG
               </div>
               <div className="flex flex-col">
-                <span className="font-black text-sm sm:text-lg tracking-tight leading-none">
-                  <span className="text-slate-900">Shivani</span> <span className="text-[#50007c]">Graphics</span>
-                </span>
-                <span className="text-[10px] text-slate-500 font-medium tracking-wider uppercase mt-0.5">
-                  Print & Signage Studio
+                <div className="flex items-center font-sans font-black text-xl sm:text-2xl tracking-tight leading-none">
+                  <span className="text-[#50007c]">Shivani</span>
+                  <span className="text-orange-500 ml-1">Graphics</span>
+                </div>
+                <span className="text-[9px] sm:text-[10px] text-slate-500 font-semibold tracking-tight -mt-0.5 group-hover:text-orange-600 transition-colors">
+                  Digital Prints & Signages
                 </span>
               </div>
             </button>
@@ -210,19 +211,21 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               type="button"
-              onClick={onNavigateGallery}
-              className="hidden sm:inline-block text-xs font-bold text-slate-700 hover:text-[#50007c] px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-            >
-              Gallery
-            </button>
-
-            <button
-              type="button"
               onClick={onNavigateAbout}
               className="hidden sm:inline-block text-xs font-bold text-slate-700 hover:text-[#50007c] px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
             >
               About Us
             </button>
+
+            {onNavigateAdmin && (
+              <button
+                type="button"
+                onClick={onNavigateAdmin}
+                className="hidden md:inline-flex items-center gap-1 text-xs font-black text-[#50007c] bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg transition-colors border border-purple-200"
+              >
+                <span>⚙️ Admin Panel</span>
+              </button>
+            )}
 
             {/* Mobile Search Trigger */}
             <button

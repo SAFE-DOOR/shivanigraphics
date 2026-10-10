@@ -94,3 +94,23 @@ export interface FaqItem {
   question: string;
   answer: string;
 }
+
+export type OrderStatus = 
+  | 'Received & Verified' 
+  | 'Digital Proof Approved' 
+  | 'In High-Speed Production' 
+  | 'Lamination & Quality Check' 
+  | 'Dispatched / Ready for Pickup';
+
+export interface OrderRecord {
+  id: string; // e.g. SG-842910
+  customerName: string;
+  customerPhone: string;
+  customerCity?: string;
+  productTitle: string;
+  quantity: number;
+  specsSummary: string;
+  status: OrderStatus;
+  createdAt: string;
+  notes?: string;
+}

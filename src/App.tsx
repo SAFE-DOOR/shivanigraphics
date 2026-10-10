@@ -12,13 +12,12 @@ import { AboutUsPage } from './components/AboutUsPage';
 import { TrackOrderPage } from './components/TrackOrderPage';
 import { HelpCenter } from './components/HelpCenter';
 import { Footer, PolicyRoute } from './components/Footer';
+import { AdminPanel } from './components/AdminPanel';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 import { CartModal } from './components/CartModal';
 import { BulkQuoteModal } from './components/BulkQuoteModal';
 import { playWelcomeVoiceGreeting, hasBeenGreeted, isVoiceMuted } from './utils/voiceGreeting';
 import { addRecentlyViewedId } from './utils/recentlyViewed';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './firebase';
 
 // Dedicated Separate Sub-Pages (Replacing Popups/Modals)
 import { TermsPage } from './components/pages/TermsPage';
@@ -26,15 +25,6 @@ import { PrivacyPage } from './components/pages/PrivacyPage';
 import { RefundPolicyPage } from './components/pages/RefundPolicyPage';
 import { ArtworkGuidelinesPage } from './components/pages/ArtworkGuidelinesPage';
 import { ContactPage } from './components/pages/ContactPage';
-import { PaymentBillingPage } from './components/pages/PaymentBillingPage';
-import { ProductsGalleryPage } from './components/pages/ProductsGalleryPage';
-import { MasterAdminPanel } from './components/MasterAdminPanel';
-
-// Admin Studio & Context System
-import { AdminProvider, useAdmin } from './context/AdminContext';
-import { ToastProvider, useToast } from './context/ToastContext';
-import { AdminLogin } from './admin/AdminLogin';
-import { AdminLayout } from './admin/AdminLayout';
 
 export type AppView = 
   | 'home' 
@@ -43,73 +33,18 @@ export type AppView =
   | 'about' 
   | 'track' 
   | 'help'
+  | 'admin'
   | 'terms'
   | 'privacy'
   | 'refund-policy'
   | 'artwork-guidelines'
-  | 'contact'
-  | 'payment-billing'
-  | 'gallery'
-  | 'admin';
+  | 'contact';
 
-function AdminRouter({ onBackToWebsite }: { onBackToWebsite: () => void }) {
-  const { isAdminLoggedIn, login } = useAdmin();
-  const [firebaseUser, setFirebaseUser] = useState<any>(null);
-  const [authChecking, setAuthChecking] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setFirebaseUser(user);
-      if (user && !isAdminLoggedIn) {
-        login({
-          email: user.email || 'admin@shivanigraphics.com',
-          name: user.email?.split('@')[0].toUpperCase() || 'ADMIN',
-          role: 'Super Admin'
-        });
-      }
-      setAuthChecking(false);
-    });
-    return () => unsubscribe();
-  }, [isAdminLoggedIn, login]);
-
-  if (authChecking) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white space-y-4">
-        <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs font-bold text-slate-400">Verifying secure Firebase session...</p>
-      </div>
-    );
-  }
-
-  if (!isAdminLoggedIn && !firebaseUser) {
-    return <AdminLogin onBackToWebsite={onBackToWebsite} />;
-  }
-
-  return <AdminLayout onBackToWebsite={onBackToWebsite} />;
-}
-
-function AppContent() {
+export default function App() {
   const [currentView, setCurrentView] = useState<AppView>('home');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
-  const [products, setProducts] = useState<ProductItem[]>(PRODUCTS);
   const [activeProduct, setActiveProduct] = useState<ProductItem>(PRODUCTS[0]);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const { showToast } = useToast();
-  const { products: adminProducts, websiteContent } = useAdmin();
-  const productsToUse = adminProducts && adminProducts.length > 0 ? adminProducts : products;
-
-  // Sync SEO metadata from websiteContent
-  useEffect(() => {
-    if (websiteContent.seoTitle) {
-      document.title = websiteContent.seoTitle;
-    }
-    if (websiteContent.seoDescription) {
-      const metaDesc = document.querySelector('meta[name="description"]');
-      if (metaDesc) {
-        metaDesc.setAttribute('content', websiteContent.seoDescription);
-      }
-    }
-  }, [websiteContent]);
 
   // Modals state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -121,11 +56,7 @@ function AppContent() {
   useEffect(() => {
     const handleLocationChange = () => {
       const hash = window.location.hash.replace(/^#\/?/, '');
-      if (hash === 'admin' || hash.startsWith('admin/')) {
-        setCurrentView('admin');
-        return;
-      }
-      const validViews = [
+      const validViews: AppView[] = [
         'terms', 
         'privacy', 
         'refund-policy', 
@@ -134,12 +65,12 @@ function AppContent() {
         'about', 
         'track', 
         'help',
-        'payment-billing',
-        'gallery',
         'admin'
       ];
-      if ((validViews as string[]).includes(hash)) {
+      if (validViews.includes(hash as AppView)) {
         setCurrentView(hash as AppView);
+      } else if (!hash) {
+        // default view remains if not navigating back to root
       }
     };
 
@@ -171,59 +102,9 @@ function AppContent() {
     };
   }, []);
 
-  // Dynamic SEO title & meta description updater
-  useEffect(() => {
-    let title = 'Shivani Graphics - Printo-Style Custom Printing & Online Catalog';
-    let description = 'Premium commercial digital printing in Delhi NCR & Pan-India. Visiting cards, banners, standees, corporate stationery, photo frames, and customized merchandising with instant WhatsApp ordering.';
-
-    if (currentView === 'product' && activeProduct) {
-      title = `${activeProduct.title} - ${activeProduct.subtitle} | Shivani Graphics`;
-      description = activeProduct.detailedDescription || activeProduct.shortDescription;
-    } else if (currentView === 'category') {
-      const cat = CATEGORIES.find(c => c.id === selectedCategoryId);
-      if (cat) {
-        title = `${cat.label} - Online Printing & Signage | Shivani Graphics`;
-        description = cat.description;
-      } else {
-        title = 'Product Catalog & Services | Shivani Graphics';
-        description = 'Browse our complete catalog of commercial printing, signage, corporate gifts, and custom merchandising.';
-      }
-    } else if (currentView === 'about') {
-      title = 'About Us & Store Location - Shivani Graphics Delhi NCR';
-      description = 'Learn about Shivani Graphics in Mahavir Enclave, Delhi NCR. Trusted commercial digital printers providing express pickup and Pan-India delivery.';
-    } else if (currentView === 'track') {
-      title = 'Track Order & Production Status | Shivani Graphics';
-      description = 'Check real-time production, printing, and delivery status for your custom printing orders at Shivani Graphics.';
-    } else if (currentView === 'contact') {
-      title = 'Store Location & Contact Us | Shivani Graphics Delhi NCR';
-      description = 'Visit our Mahavir Enclave store in New Delhi or contact our support team for urgent corporate printing requirements.';
-    } else if (currentView === 'gallery') {
-      title = 'Product Gallery & Portfolio | Shivani Graphics';
-      description = 'Explore high-resolution photographs of our recent visiting cards, flex banners, acrylic boards, and customized corporate merchandise.';
-    } else if (currentView === 'help') {
-      title = 'Help Center & Prepress Support | Shivani Graphics';
-      description = 'Get answers to common printing questions, file preparation guidelines (CDR, PDF, CMYK), and customer support.';
-    } else if (currentView === 'admin') {
-      title = 'Master Admin Studio | Shivani Graphics';
-      description = 'Secure admin dashboard for managing products, orders, invoices, and website assets.';
-    }
-
-    document.title = title;
-    
-    const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute('content', description);
-
-    const ogTitle = document.querySelector('meta[property="og:title"]');
-    if (ogTitle) ogTitle.setAttribute('content', title);
-
-    const ogDesc = document.querySelector('meta[property="og:description"]');
-    if (ogDesc) ogDesc.setAttribute('content', description);
-  }, [currentView, activeProduct, selectedCategoryId]);
-
-  // Cart operations with Toast Feedback
+  // Cart operations
   const handleAddToCart = (item: CartItem) => {
     setCartItems(prev => [item, ...prev]);
-    showToast(`"${item.productTitle}" added to cart successfully!`, 'success');
   };
 
   const handleRemoveCartItem = (id: string) => {
@@ -251,30 +132,25 @@ function AppContent() {
     setCurrentView(view);
     if (view === 'home') {
       window.history.pushState(null, '', window.location.pathname);
-      window.location.hash = '';
     } else {
-      window.location.hash = `#/${view}`;
+      window.history.pushState(null, '', `#/${view}`);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handlePolicyNavigate = (policyRoute: PolicyRoute) => {
-    navigateTo(policyRoute as AppView);
+  const handlePolicyNavigate = (route: PolicyRoute) => {
+    navigateTo(route as AppView);
   };
 
-  if (currentView === 'admin') {
-    return <AdminRouter onBackToWebsite={() => navigateTo('home')} />;
-  }
-
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white transition-colors">
+    <div className="min-h-screen flex flex-col bg-white text-slate-900 selection:bg-[#50007c] selection:text-white">
       
-      {/* 1. Top Brand Announcement Banner */}
+      {/* 1. Top Purple Announcement Bar */}
       <TopBanner />
 
       {/* 2. Main Printo-Style Navigation Header */}
       <Header
-        products={productsToUse}
+        products={PRODUCTS}
         selectedCategoryId={selectedCategoryId}
         onSelectProduct={handleSelectProduct}
         onSelectCategory={handleSelectCategory}
@@ -282,52 +158,67 @@ function AppContent() {
         cartCount={cartItems.length}
         onOpenCartModal={() => setIsCartModalOpen(true)}
         onOpenStoreModal={() => navigateTo('contact')}
-        onOpenHelpCenter={() => navigateTo('help')}
+        onOpenHelpCenter={() => setIsHelpCenterModalOpen(true)}
         onNavigateHome={() => navigateTo('home')}
         onNavigateTrack={() => navigateTo('track')}
         onNavigateAbout={() => navigateTo('about')}
-        onNavigateGallery={() => navigateTo('gallery')}
+        onNavigateAdmin={() => navigateTo('admin')}
       />
 
-      {/* Mobile Drawer Menu */}
+      {/* 3. Mobile Slide-out Drawer */}
       <MobileDrawer
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
         selectedCategory={selectedCategoryId}
         onSelectCategory={handleSelectCategory}
-        products={productsToUse}
+        products={PRODUCTS}
         onSelectProduct={handleSelectProduct}
         onOpenStoreModal={() => navigateTo('contact')}
-        onOpenHelpCenter={() => navigateTo('help')}
+        onOpenHelpCenter={() => setIsHelpCenterModalOpen(true)}
         onNavigateHome={() => navigateTo('home')}
         onNavigateTrack={() => navigateTo('track')}
         onNavigateAbout={() => navigateTo('about')}
         onNavigatePolicy={handlePolicyNavigate}
       />
 
-      {/* 3. Main Dynamic Content Router */}
-      <main className="flex-1">
-        <AnimatePresence mode="wait">
+      {/* 4. Active View Rendering with Framer Motion Slide-Up Page Transitions */}
+      <main className="flex-1 overflow-x-hidden">
+        <AnimatePresence mode="wait" initial={false}>
           <motion.div
-            key={currentView}
-            initial={{ opacity: 0, y: 6 }}
+            key={
+              currentView === 'product'
+                ? `product-${activeProduct.id}`
+                : currentView === 'category'
+                ? `category-${selectedCategoryId}`
+                : currentView
+            }
+            initial={{ opacity: 0, y: 22 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.2 }}
+            exit={{ opacity: 0, y: -14 }}
+            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full flex-1"
           >
+            {/* Home Feed */}
             {currentView === 'home' && (
-              <PrintoHomeFeed
-                products={productsToUse}
-                onSelectProduct={handleSelectProduct}
-                onSelectCategory={handleSelectCategory}
-                onOpenBulkModal={() => setIsBulkModalOpen(true)}
-              />
+              <>
+                <PrintoHomeFeed
+                  products={PRODUCTS}
+                  onSelectProduct={handleSelectProduct}
+                  onSelectCategory={handleSelectCategory}
+                  onOpenBulkModal={() => setIsBulkModalOpen(true)}
+                  onOpenStoreModal={() => navigateTo('contact')}
+                  onOpenArtworkGuide={() => navigateTo('artwork-guidelines')}
+                />
+                {/* Embedded Help Center on Home Bottom */}
+                <HelpCenter />
+              </>
             )}
 
-            {currentView === 'product' && activeProduct && (
+            {/* Product Detail Subpage */}
+            {currentView === 'product' && (
               <ProductDetailPage
                 product={activeProduct}
-                allProducts={productsToUse}
+                allProducts={PRODUCTS}
                 onBack={() => navigateTo('home')}
                 onSelectProduct={handleSelectProduct}
                 onAddToCart={handleAddToCart}
@@ -335,61 +226,86 @@ function AppContent() {
               />
             )}
 
+            {/* Category Subpage */}
             {currentView === 'category' && (
               <CategoryPage
                 categoryId={selectedCategoryId}
-                products={productsToUse}
+                products={PRODUCTS}
                 onSelectProduct={handleSelectProduct}
                 onSelectCategory={handleSelectCategory}
                 onBackToHome={() => navigateTo('home')}
               />
             )}
 
-            {currentView === 'terms' && <TermsPage onBackToHome={() => navigateTo('home')} onNavigateContact={() => navigateTo('contact')} />}
-            {currentView === 'privacy' && <PrivacyPage onBackToHome={() => navigateTo('home')} />}
-            {currentView === 'refund-policy' && <RefundPolicyPage onBackToHome={() => navigateTo('home')} />}
-            {currentView === 'artwork-guidelines' && <ArtworkGuidelinesPage onBackToHome={() => navigateTo('home')} />}
-            {currentView === 'contact' && <ContactPage onBackToHome={() => navigateTo('home')} />}
-            {currentView === 'payment-billing' && <PaymentBillingPage onBackToHome={() => navigateTo('home')} />}
-            {currentView === 'about' && <AboutUsPage onBackToHome={() => navigateTo('home')} onExploreCatalog={() => navigateTo('home')} />}
-            {currentView === 'track' && <TrackOrderPage onBackToHome={() => navigateTo('home')} />}
-            {currentView === 'gallery' && (
-              <ProductsGalleryPage
-                products={productsToUse}
+            {/* Dedicated Sub-Page 1: Terms of Service & 4-Hour Delivery */}
+            {currentView === 'terms' && (
+              <TermsPage
                 onBackToHome={() => navigateTo('home')}
-                onSelectProduct={handleSelectProduct}
-                onAddToCart={(product, qty) => {
-                  handleAddToCart({
-                    id: 'cart-' + Date.now(),
-                    productId: product.id,
-                    productTitle: product.title,
-                    config: {
-                      sizeId: product.config.sizes[0]?.id || 'standard',
-                      materialId: product.config.materials[0]?.id || 'standard',
-                      finishId: product.config.finishes[0]?.id || 'standard',
-                      sideId: product.config.sides[0]?.id || 'single',
-                      quantity: qty,
-                      hasArtwork: false
-                    },
-                    sizeLabel: product.config.sizes[0]?.name || 'Standard Size',
-                    materialLabel: product.config.materials[0]?.name || 'Standard Material',
-                    finishLabel: product.config.finishes[0]?.name || 'Standard Finish',
-                    sideLabel: product.config.sides[0]?.name || 'Single Sided',
-                    imageUrl: product.images[0]?.url || ''
-                  });
-                }}
+                onNavigateContact={() => navigateTo('contact')}
               />
             )}
+
+            {/* Dedicated Sub-Page 2: Privacy Policy & Artwork Non-Disclosure */}
+            {currentView === 'privacy' && (
+              <PrivacyPage
+                onBackToHome={() => navigateTo('home')}
+              />
+            )}
+
+            {/* Dedicated Sub-Page 3: Cancellation & 100% Free Reprint / Refund */}
+            {currentView === 'refund-policy' && (
+              <RefundPolicyPage
+                onBackToHome={() => navigateTo('home')}
+              />
+            )}
+
+            {/* Dedicated Sub-Page 4: Prepress & Artwork Guidelines */}
+            {currentView === 'artwork-guidelines' && (
+              <ArtworkGuidelinesPage
+                onBackToHome={() => navigateTo('home')}
+              />
+            )}
+
+            {/* Dedicated Sub-Page 5: Contact Us & Store Facility Location */}
+            {currentView === 'contact' && (
+              <ContactPage
+                onBackToHome={() => navigateTo('home')}
+              />
+            )}
+
+            {/* About Us Page */}
+            {currentView === 'about' && (
+              <AboutUsPage
+                onBackToHome={() => navigateTo('home')}
+                onExploreCatalog={() => navigateTo('home')}
+              />
+            )}
+
+            {/* Track Order Page */}
+            {currentView === 'track' && (
+              <TrackOrderPage
+                onBackToHome={() => navigateTo('home')}
+              />
+            )}
+
+            {/* Help Center Full Page */}
             {currentView === 'help' && (
               <div className="py-8">
                 <HelpCenter isModal={false} />
               </div>
             )}
+
+            {/* Admin Panel Page */}
+            {currentView === 'admin' && (
+              <AdminPanel
+                onBackToHome={() => navigateTo('home')}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
       </main>
 
-      {/* 5. Printo-Style Footer */}
+      {/* 5. Printo-Style Footer with Dedicated Sub-Page Policy Routing */}
       <Footer
         onSelectCategory={handleSelectCategory}
         onOpenStoreModal={() => navigateTo('contact')}
@@ -397,8 +313,8 @@ function AppContent() {
         onOpenBulkModal={() => setIsBulkModalOpen(true)}
         onNavigateAbout={() => navigateTo('about')}
         onNavigateTrack={() => navigateTo('track')}
+        onNavigateAdmin={() => navigateTo('admin')}
         onNavigatePolicy={handlePolicyNavigate}
-        onOpenAdminModal={() => navigateTo('admin')}
       />
 
       {/* 6. Round Green Floating WhatsApp Button */}
@@ -425,15 +341,5 @@ function AppContent() {
       />
 
     </div>
-  );
-}
-
-export default function App() {
-  return (
-    <AdminProvider>
-      <ToastProvider>
-        <AppContent />
-      </ToastProvider>
-    </AdminProvider>
   );
 }

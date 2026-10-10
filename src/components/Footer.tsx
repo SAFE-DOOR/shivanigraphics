@@ -7,10 +7,15 @@ import {
   SUPPORT_EMAIL, 
   STORE_ADDRESS, 
   GOOGLE_MAPS_URL, 
-  INSTAGRAM_URL
+  INSTAGRAM_URL,
+  BUSINESS_GSTIN,
+  BUSINESS_OWNER,
+  BUSINESS_OWNER_FULL,
+  BUSINESS_TYPE,
+  PRINCIPAL_ADDRESS
 } from '../utils/whatsapp';
 
-export type PolicyRoute = 'terms' | 'privacy' | 'refund-policy' | 'artwork-guidelines' | 'contact' | 'payment-billing';
+export type PolicyRoute = 'terms' | 'privacy' | 'refund-policy' | 'artwork-guidelines' | 'contact';
 
 interface FooterProps {
   onSelectCategory: (categoryId: string) => void;
@@ -19,8 +24,8 @@ interface FooterProps {
   onOpenBulkModal: () => void;
   onNavigateAbout?: () => void;
   onNavigateTrack?: () => void;
+  onNavigateAdmin?: () => void;
   onNavigatePolicy?: (policy: PolicyRoute) => void;
-  onOpenAdminModal?: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({
@@ -30,8 +35,8 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenBulkModal,
   onNavigateAbout,
   onNavigateTrack,
-  onNavigatePolicy,
-  onOpenAdminModal
+  onNavigateAdmin,
+  onNavigatePolicy
 }) => {
   const [openSection, setOpenSection] = useState<string | null>(null);
 
@@ -53,8 +58,14 @@ export const Footer: React.FC<FooterProps> = ({
       {/* Brand Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-10 pb-6 text-center space-y-2">
         <div className="flex flex-col items-center">
-          <div className="h-16 sm:h-20 rounded-xl overflow-hidden bg-white flex items-center shadow-sm">
-            <img src="https://img.sanishtech.com/u/65c843b363e7b4f65c6efab5a16570b4.jpg" alt="Shivani Graphics" className="h-full w-auto object-contain" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#50007c] via-purple-700 to-orange-500 flex items-center justify-center text-white font-black text-base shadow-sm">
+              SG
+            </div>
+            <div className="flex items-center font-sans font-black text-2xl sm:text-3xl tracking-tight leading-none">
+              <span className="text-[#50007c]">Shivani</span>
+              <span className="text-orange-500 ml-1.5">Graphics</span>
+            </div>
           </div>
           <span className="text-[11px] text-slate-500 font-semibold tracking-wide mt-2">
             One-Stop Digital Printing & Corporate Branding Solutions
@@ -207,16 +218,6 @@ export const Footer: React.FC<FooterProps> = ({
               >
                 <FileCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                 <span>Artwork & Print Guidelines</span>
-              </button>
-            </li>
-            <li>
-              <button 
-                type="button" 
-                onClick={() => handleRoute('payment-billing')}
-                className="hover:text-[#50007c] hover:underline cursor-pointer text-left flex items-center gap-1.5"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>Payment & Billing (UPI)</span>
               </button>
             </li>
           </ul>
@@ -560,7 +561,23 @@ export const Footer: React.FC<FooterProps> = ({
           >
             Contact Us
           </button>
+          {onNavigateAdmin && (
+            <>
+              <span className="text-slate-300">·</span>
+              <button 
+                type="button" 
+                onClick={onNavigateAdmin} 
+                className="hover:text-[#50007c] font-black text-[#50007c] hover:underline cursor-pointer"
+              >
+                ⚙️ Admin Panel
+              </button>
+            </>
+          )}
         </div>
+
+
+
+
 
         {/* Social Icons with Verified Real URLs */}
         <div className="flex flex-wrap items-center justify-center gap-4 text-slate-600">
@@ -604,31 +621,11 @@ export const Footer: React.FC<FooterProps> = ({
           </a>
         </div>
 
-        {/* Modern Secure UPI Payment Badge */}
-        <div className="flex flex-col items-center justify-center gap-2.5 pt-3 pb-1">
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-black text-[11px] shadow-2xs flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span>Google Pay (GPay)</span>
-            </span>
-            <span className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-purple-900 font-black text-[11px] shadow-2xs flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-purple-600" />
-              <span>PhonePe</span>
-            </span>
-            <span className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-blue-900 font-black text-[11px] shadow-2xs flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-blue-600" />
-              <span>Paytm UPI</span>
-            </span>
-            <span className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-orange-800 font-black text-[11px] shadow-2xs flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-orange-500" />
-              <span>BHIM UPI</span>
-            </span>
-          </div>
-
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 font-bold text-[11px]">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>100% Secure Verified Business UPI Transfers Only</span>
-          </div>
+        {/* Payment badges */}
+        <div className="flex items-center justify-center gap-4 text-xs font-bold text-slate-500">
+          <span className="px-2 py-0.5 bg-slate-100 rounded text-blue-900 font-black">VISA</span>
+          <span className="px-2 py-0.5 bg-slate-100 rounded text-red-600 font-black">Mastercard</span>
+          <span className="px-2 py-0.5 bg-slate-100 rounded text-emerald-700 font-black">UPI / GPay</span>
         </div>
 
         {/* Copyright */}

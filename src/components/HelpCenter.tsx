@@ -38,15 +38,10 @@ export const HelpCenter: React.FC<HelpCenterProps> = ({ isOpen, onClose, isModal
             <Headphones className="w-8 h-8 stroke-[1.8]" />
           </div>
           <div>
-            <h3 className="font-black text-base text-slate-900">Call us for Queries</h3>
-            <div className="text-xs font-bold text-slate-800 space-y-1 mt-2">
-              <a href={`tel:+${WHATSAPP_PRIMARY}`} className="block text-[#50007c] hover:underline">
-                +91-9810157695
-              </a>
-              <a href={`tel:+${PHONE_SECONDARY}`} className="block text-[#50007c] hover:underline">
-                +91-9266944315
-              </a>
-            </div>
+            <h3 className="font-black text-base text-slate-900">WhatsApp & Phone Support</h3>
+            <p className="text-xs text-slate-500 mt-2">
+              Connect directly with our support team for instant order tracking & quote assistance.
+            </p>
             <p className="text-[11px] text-slate-400 mt-2">
               (Mon - Sat: 9:30 AM - 8:30 PM)
             </p>
@@ -55,9 +50,9 @@ export const HelpCenter: React.FC<HelpCenterProps> = ({ isOpen, onClose, isModal
             href={`https://wa.me/${WHATSAPP_PRIMARY}?text=${encodeURIComponent('Hello Shivani Graphics! I have a question regarding print services.')}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full py-2 bg-[#50007c] hover:bg-[#400063] text-white text-xs font-bold rounded-lg transition-colors"
+            className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5"
           >
-            Chat on WhatsApp
+            <span>Chat on WhatsApp</span>
           </a>
         </div>
 
@@ -67,22 +62,16 @@ export const HelpCenter: React.FC<HelpCenterProps> = ({ isOpen, onClose, isModal
             <Mail className="w-8 h-8 stroke-[1.8]" />
           </div>
           <div>
-            <h3 className="font-black text-base text-slate-900">E-Mail us</h3>
-            <p className="text-xs text-slate-500 mt-1">
-              Sales enquiries and customer support:
+            <h3 className="font-black text-base text-slate-900">E-Mail Inquiries</h3>
+            <p className="text-xs text-slate-500 mt-2">
+              Send your design artwork files and bulk corporate requirements securely via email.
             </p>
-            <a 
-              href={`mailto:${SUPPORT_EMAIL}`}
-              className="text-xs sm:text-sm font-bold text-[#50007c] hover:underline block mt-2 break-all"
-            >
-              {SUPPORT_EMAIL}
-            </a>
           </div>
           <a
             href={`mailto:${SUPPORT_EMAIL}`}
-            className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg transition-colors"
+            className="w-full py-2 bg-[#50007c] hover:bg-[#400063] text-white text-xs font-bold rounded-lg transition-colors"
           >
-            Send Email
+            Send Email Inquiry
           </a>
         </div>
 

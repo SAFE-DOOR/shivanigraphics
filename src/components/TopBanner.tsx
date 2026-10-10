@@ -15,7 +15,7 @@ export const TopBanner: React.FC = () => {
     },
     { 
       icon: <Phone className="w-3.5 h-3.5 text-emerald-300 shrink-0" />, 
-      text: "WhatsApp & Helplines: +91-9810157695 / +91-9266944315" 
+      text: "WhatsApp & Helplines: +91-9266944315 / +91-9810157695" 
     },
     { 
       icon: <ShieldCheck className="w-3.5 h-3.5 text-teal-300 shrink-0" />, 
