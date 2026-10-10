@@ -65,34 +65,37 @@ export const CmsView: React.FC = () => {
         </div>
 
         <div className="pt-4 border-t border-slate-200 space-y-4">
-          <h3 className="font-black text-sm text-[#50007c]">About Us Page Content Management</h3>
+          <h3 className="font-black text-sm text-[#50007c]">SEO & Search Engine Meta Tags Management</h3>
           <div>
-            <label className="font-bold text-slate-700 block mb-1">About Us Page Title</label>
+            <label className="font-bold text-slate-700 block mb-1">SEO Page Title (Browser Tab Title)</label>
             <input
               type="text"
-              value={form.aboutTitle || ''}
-              onChange={(e) => setForm({ ...form, aboutTitle: e.target.value })}
+              value={form.seoTitle || ''}
+              onChange={(e) => setForm({ ...form, seoTitle: e.target.value })}
               className="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-medium"
+              placeholder="e.g. Shivani Graphics · Custom Print & Signage | Delhi NCR"
             />
           </div>
 
           <div>
-            <label className="font-bold text-slate-700 block mb-1">About Us Company Story & Description</label>
+            <label className="font-bold text-slate-700 block mb-1">Meta Description (Google Search Snippet)</label>
             <textarea
-              rows={4}
-              value={form.aboutDescription || ''}
-              onChange={(e) => setForm({ ...form, aboutDescription: e.target.value })}
+              rows={2}
+              value={form.seoDescription || ''}
+              onChange={(e) => setForm({ ...form, seoDescription: e.target.value })}
               className="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-medium"
+              placeholder="Brief summary for Google search results..."
             />
           </div>
 
           <div>
-            <label className="font-bold text-slate-700 block mb-1">Our Mission & Quality Guarantee</label>
-            <textarea
-              rows={3}
-              value={form.aboutMission || ''}
-              onChange={(e) => setForm({ ...form, aboutMission: e.target.value })}
+            <label className="font-bold text-slate-700 block mb-1">Meta Keywords (Comma separated)</label>
+            <input
+              type="text"
+              value={form.seoKeywords || ''}
+              onChange={(e) => setForm({ ...form, seoKeywords: e.target.value })}
               className="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-medium"
+              placeholder="printing press, visiting cards, flex banners, delhi ncr"
             />
           </div>
         </div>

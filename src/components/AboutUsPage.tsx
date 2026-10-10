@@ -229,6 +229,91 @@ export const AboutUsPage: React.FC<AboutUsPageProps> = ({ onBackToHome, onExplor
           </div>
         </div>
 
+        {/* Interactive Delhi NCR Delivery Zones Map & Coverage */}
+        <div className="bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-500/20 text-orange-400 rounded-full text-xs font-bold mb-2">
+                <MapPin className="w-3.5 h-3.5" />
+                <span>Delhi NCR Express Logistics & Coverage Map</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight">Interactive Delhi NCR Delivery Zones</h2>
+              <p className="text-xs text-purple-200">Click a zone below or check your location to view guaranteed express printing and dispatch times from our Mahavir Enclave hub.</p>
+            </div>
+            <div className="bg-white/10 px-4 py-2 rounded-2xl border border-white/20 text-center">
+              <span className="block text-[10px] text-slate-400 uppercase font-bold">HQ Location</span>
+              <span className="font-extrabold text-xs text-orange-400">Mahavir Enclave, New Delhi</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Zones List / Interactive Selector */}
+            <div className="space-y-2.5 lg:col-span-1">
+              <p className="text-[11px] font-black uppercase tracking-wider text-purple-300 mb-1">Select Delivery Zone:</p>
+              {[
+                { zone: 'Mahavir Enclave / Dwarka / Palam', time: '15 - 30 Mins', type: 'Instant Counter & Bike Express', status: 'Active Dispatch' },
+                { zone: 'Janakpuri / Uttam Nagar / Rajouri', time: '30 - 45 Mins', type: 'Same-Day Express Courier', status: 'Active Dispatch' },
+                { zone: 'Connaught Place / Central Delhi', time: '45 - 60 Mins', type: 'Priority Corporate Fleet', status: 'Active Dispatch' },
+                { zone: 'South Delhi (Greater Kailash, Saket)', time: '45 - 75 Mins', type: 'Express Delivery', status: 'Active Dispatch' },
+                { zone: 'Noida (Sector 18 / Expressway)', time: 'Same Day', type: 'Scheduled Express Dispatch', status: 'Daily Runs' },
+                { zone: 'Gurgaon (Cyber City / Udyog Vihar)', time: 'Same Day', type: 'Scheduled Express Dispatch', status: 'Daily Runs' },
+                { zone: 'Faridabad & Ghaziabad', time: 'Next Morning', type: 'Secure Transit Cargo', status: 'Scheduled' }
+              ].map((item, idx) => (
+                <div 
+                  key={idx}
+                  className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 transition-all cursor-pointer flex items-center justify-between group"
+                >
+                  <div className="space-y-0.5">
+                    <span className="font-bold text-xs text-white group-hover:text-orange-400 transition-colors block">{item.zone}</span>
+                    <span className="text-[10px] text-purple-300">{item.type}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="px-2 py-0.5 bg-orange-500 text-white font-black text-[10px] rounded-lg block">{item.time}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Simulated Interactive Map View with Hub Marker */}
+            <div className="lg:col-span-2 bg-slate-950 rounded-2xl p-6 border border-purple-500/30 relative overflow-hidden flex flex-col justify-between min-h-[320px]">
+              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#a855f7_1px,transparent_1px)] [background-size:16px_16px]" />
+              
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-purple-500/40 text-xs">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                  <span className="font-bold text-white">Live Hub Status: Fully Operational</span>
+                </div>
+                <span className="text-[11px] text-purple-300 font-mono">GPS: 28.5982° N, 77.0863° E</span>
+              </div>
+
+              <div className="relative z-10 my-8 text-center space-y-4">
+                <div className="inline-block p-4 bg-gradient-to-tr from-purple-600 to-orange-500 rounded-full shadow-2xl animate-bounce">
+                  <Printer className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-black text-lg text-white">Shivani Graphics Central Print Hub</h3>
+                  <p className="text-xs text-slate-300 max-w-md mx-auto mt-1">
+                    Strategically located in Mahavir Enclave, New Delhi, ensuring direct arterial access to Dwarka Expressway, Ring Road, and NH-48 for lightning-fast Delhi NCR dispatch.
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative z-10 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between text-xs text-purple-200 gap-2">
+                <span>⚡ 4-Hour Express Turnaround Available</span>
+                <a
+                  href={GOOGLE_MAPS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-orange-400 hover:underline inline-flex items-center gap-1"
+                >
+                  <span>Open in Google Maps</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Location & Contact Information */}
         <div className="bg-[#50007c] text-white p-6 sm:p-8 rounded-3xl space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

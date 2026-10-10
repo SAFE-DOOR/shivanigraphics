@@ -95,8 +95,21 @@ function AppContent() {
   const [activeProduct, setActiveProduct] = useState<ProductItem>(PRODUCTS[0]);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const { showToast } = useToast();
-  const { products: adminProducts } = useAdmin();
+  const { products: adminProducts, websiteContent } = useAdmin();
   const productsToUse = adminProducts && adminProducts.length > 0 ? adminProducts : products;
+
+  // Sync SEO metadata from websiteContent
+  useEffect(() => {
+    if (websiteContent.seoTitle) {
+      document.title = websiteContent.seoTitle;
+    }
+    if (websiteContent.seoDescription) {
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) {
+        metaDesc.setAttribute('content', websiteContent.seoDescription);
+      }
+    }
+  }, [websiteContent]);
 
   // Modals state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

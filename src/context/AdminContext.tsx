@@ -148,6 +148,9 @@ interface AdminContextType {
     aboutTitle?: string;
     aboutDescription?: string;
     aboutMission?: string;
+    seoTitle?: string;
+    seoDescription?: string;
+    seoKeywords?: string;
   };
   updateWebsiteContent: (content: any) => Promise<void>;
   coupons: CouponItem[];
@@ -188,7 +191,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     businessName: 'Shivani Graphics',
     aboutTitle: 'About Shivani Graphics - Delhi NCRs Premier Commercial Printing Press',
     aboutDescription: 'Established with a commitment to lightning-fast printing, superior 350 GSM card stock, and state-of-the-art Konica Minolta digital printing press in Mahavir Enclave, Delhi.',
-    aboutMission: 'To provide 5-minute visiting cards, bulk flex banners, and 3D acrylic LED boards with unmatched precision and wholesale pricing.'
+    aboutMission: 'To provide 5-minute visiting cards, bulk flex banners, and 3D acrylic LED boards with unmatched precision and wholesale pricing.',
+    seoTitle: 'Shivani Graphics · Custom Print & Signage | Delhi NCR',
+    seoDescription: 'Premium commercial digital printing in Delhi NCR & Pan-India. Visiting cards, banners, standees, corporate stationery, photo frames, and customized merchandising with instant WhatsApp ordering.',
+    seoKeywords: 'printing press, visiting cards, flex banners, signages, delhi ncr, shivani graphics, print shop'
   });
   const [coupons, setCoupons] = useState<CouponItem[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([
@@ -350,7 +356,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           businessName: 'Shivani Graphics',
           aboutTitle: 'About Shivani Graphics - Delhi NCRs Premier Commercial Printing Press',
           aboutDescription: 'Established with a commitment to lightning-fast printing, superior 350 GSM card stock, and state-of-the-art Konica Minolta digital printing press in Mahavir Enclave, Delhi.',
-          aboutMission: 'To provide 5-minute visiting cards, bulk flex banners, and 3D acrylic LED boards with unmatched precision and wholesale pricing.'
+          aboutMission: 'To provide 5-minute visiting cards, bulk flex banners, and 3D acrylic LED boards with unmatched precision and wholesale pricing.',
+          seoTitle: 'Shivani Graphics · Custom Print & Signage | Delhi NCR',
+          seoDescription: 'Premium commercial digital printing in Delhi NCR & Pan-India. Visiting cards, banners, standees, corporate stationery, photo frames, and customized merchandising with instant WhatsApp ordering.',
+          seoKeywords: 'printing press, visiting cards, flex banners, signages, delhi ncr, shivani graphics, print shop'
         };
         setDoc(doc(db, 'content', 'site_content'), initialContent).catch(() => {});
         setWebsiteContent(initialContent);
