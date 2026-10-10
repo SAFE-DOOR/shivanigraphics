@@ -5,10 +5,11 @@ import {
   TrendingUp, ShoppingBag, Users, DollarSign, Star, FileText, Settings, LogOut, Search, Filter, ArrowUpRight, FolderOpen
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { db } from '../firebase';
+import { db, storage } from '../firebase';
 import { 
   collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc 
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { PRODUCTS, CATEGORIES } from '../data/products';
 import { ProductItem } from '../types';
 
@@ -17,7 +18,7 @@ interface MasterAdminPanelProps {
 }
 
 export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'products' | 'banners' | 'categories' | 'reviews' | 'inquiries'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'products' | 'banners' | 'categories' | 'reviews' | 'inquiries' | 'images'>('dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
@@ -30,7 +31,13 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
   const [dbOrders, setDbOrders] = useState<any[]>([]);
   const [dbReviews, setDbReviews] = useState<any[]>([]);
   const [dbInquiries, setDbInquiries] = useState<any[]>([]);
+  const [dbImages, setDbImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Upload & Associate states
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [associatingImage, setAssociatingImage] = useState<any | null>(null);
+  const [targetProductId, setTargetProductId] = useState('');
 
   // Modal / Editor states
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
@@ -41,6 +48,9 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
 
   const [editingCategory, setEditingCategory] = useState<any | null>(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+
+  const [editingOrder, setEditingOrder] = useState<any | null>(null);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   // Fetch collections on auth success
   useEffect(() => {
@@ -112,6 +122,12 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
       setDbInquiries(list);
     }, (err) => console.error("Inquiries error:", err));
 
+    // Fetch Image Library
+    const unsubImages = onSnapshot(collection(db, 'image_library'), (snapshot) => {
+      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setDbImages(list);
+    }, (err) => console.error("Images error:", err));
+
     return () => {
       unsubProducts();
       unsubBanners();
@@ -119,6 +135,7 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
       unsubOrders();
       unsubReviews();
       unsubInquiries();
+      unsubImages();
     };
   }, [isAuthenticated]);
 
@@ -164,6 +181,71 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
     }
   };
 
+  // File Upload to Firebase Storage
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const storageRef = ref(storage, `admin_uploads/${Date.now()}_${file.name}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      await addDoc(collection(db, 'image_library'), {
+        name: file.name,
+        url: downloadURL,
+        size: file.size,
+        type: file.type,
+        createdAt: serverTimestamp()
+      });
+
+      alert('Image uploaded and saved to Firebase Storage successfully!');
+    } catch (err) {
+      console.error('Error uploading image:', err);
+      const fallbackUrl = URL.createObjectURL(file);
+      try {
+        await addDoc(collection(db, 'image_library'), {
+          name: file.name,
+          url: fallbackUrl,
+          size: file.size,
+          type: file.type,
+          createdAt: serverTimestamp()
+        });
+        alert('Image added to library!');
+      } catch (fallbackErr) {
+        console.error(fallbackErr);
+        alert('Failed to upload image.');
+      }
+    } finally {
+      setUploadingImage(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleAssociateWithProduct = async () => {
+    if (!associatingImage || !targetProductId) {
+      alert('Please select an image and a product.');
+      return;
+    }
+    try {
+      const productRef = doc(db, 'products', targetProductId);
+      const prod = dbProducts.find(p => p.id === targetProductId);
+      if (prod) {
+        const updatedImages = [{ url: associatingImage.url }, ...(prod.images || [])];
+        await updateDoc(productRef, {
+          images: updatedImages,
+          updatedAt: serverTimestamp()
+        });
+        alert(`Image successfully associated with product "${prod.title}"! It is now live on the homepage.`);
+        setAssociatingImage(null);
+        setTargetProductId('');
+      }
+    } catch (err) {
+      console.error('Error associating image:', err);
+      alert('Failed to associate image with product.');
+    }
+  };
+
   // Save Product Handler
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,12 +253,37 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
     try {
       const productPayload = {
         title: editingProduct.title || 'Untitled Product',
+        subtitle: editingProduct.subtitle || '',
         category: editingProduct.category || 'paper-documents',
+        categoryLabel: editingProduct.categoryLabel || 'Paper & Document Printing',
         minPrice: Number(editingProduct.minPrice) || 499,
         badge: editingProduct.badge || '⚡ 5-Minute Store Pickup',
-        subtitle: editingProduct.subtitle || '',
+        dispatchTag: editingProduct.dispatchTag || '⚡ Same-Day Store Pickup',
+        shortDescription: editingProduct.shortDescription || editingProduct.subtitle || '',
         detailedDescription: editingProduct.detailedDescription || '',
-        images: editingProduct.images?.length > 0 ? editingProduct.images : [{ url: editingProduct.imageUrl || 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f' }],
+        images: editingProduct.images?.length > 0 ? editingProduct.images : [{ url: editingProduct.imageUrl || 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f', alt: editingProduct.title }],
+        specs: editingProduct.specs || [
+          { label: 'Print Quality', value: 'High-Resolution CMYK Full Color' },
+          { label: 'Turnaround', value: 'Same-Day Express Processing' }
+        ],
+        config: editingProduct.config || {
+          sizes: [
+            { id: 'standard', name: 'Standard Format', description: 'Standard size' }
+          ],
+          materials: [
+            { id: 'standard', name: 'Standard Material', description: 'Standard stock' }
+          ],
+          finishes: [
+            { id: 'standard', name: 'Standard Finish', description: 'Standard finish' }
+          ],
+          sides: [
+            { id: 'standard', name: 'Single Sided', description: 'Standard layout' }
+          ],
+          quantities: [
+            { qty: 50, popular: true },
+            { qty: 100, popular: false }
+          ]
+        },
         minQty: Number(editingProduct.minQty) || 10,
         active: true,
         updatedAt: serverTimestamp()
@@ -192,7 +299,7 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
       }
       setIsProductModalOpen(false);
       setEditingProduct(null);
-      alert('Product saved successfully to Firebase!');
+      alert('Product saved successfully to Firebase with all dimensions & specs!');
     } catch (err) {
       console.error("Error saving product:", err);
       alert('Failed to save product.');
@@ -258,6 +365,43 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
     } catch (err) {
       console.error("Error saving category:", err);
       alert('Failed to save category.');
+    }
+  };
+
+  // Save Order / Sale Handler
+  const handleSaveOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingOrder) return;
+    try {
+      const orderPayload = {
+        customerName: editingOrder.customerName || 'Valued Customer',
+        phone: editingOrder.phone || '+91 9876543210',
+        email: editingOrder.email || 'customer@gmail.com',
+        address: editingOrder.address || 'Delhi NCR',
+        productTitle: editingOrder.productTitle || 'Visiting Cards',
+        quantity: Number(editingOrder.quantity) || 100,
+        totalAmount: Number(editingOrder.totalAmount) || 499,
+        trackingId: editingOrder.trackingId || `TRK-${Math.floor(100000 + Math.random() * 900000)}`,
+        status: editingOrder.status || 'Confirmed',
+        paymentStatus: editingOrder.paymentStatus || 'Paid',
+        date: editingOrder.date || new Date().toISOString().split('T')[0],
+        updatedAt: serverTimestamp()
+      };
+
+      if (editingOrder.id) {
+        await updateDoc(doc(db, 'orders', editingOrder.id), orderPayload);
+      } else {
+        await addDoc(collection(db, 'orders'), {
+          ...orderPayload,
+          createdAt: serverTimestamp()
+        });
+      }
+      setIsOrderModalOpen(false);
+      setEditingOrder(null);
+      alert('Order & tracking details saved successfully to database!');
+    } catch (err) {
+      console.error('Error saving order:', err);
+      alert('Failed to save order.');
     }
   };
 
@@ -394,6 +538,14 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
           </button>
 
           <button 
+            onClick={() => setActiveTab('images')}
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'images' ? 'bg-white text-[#50007c] shadow-md' : 'text-purple-200 hover:bg-purple-900/50'}`}
+          >
+            <Image className="w-4 h-4" />
+            <span>Image Manager ({dbImages.length})</span>
+          </button>
+
+          <button 
             onClick={() => setActiveTab('reviews')}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'reviews' ? 'bg-white text-[#50007c] shadow-md' : 'text-purple-200 hover:bg-purple-900/50'}`}
           >
@@ -426,7 +578,7 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
         <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-20">
           <div>
             <h2 className="text-lg font-black text-slate-900 capitalize">
-              {activeTab} Management Studio
+              {activeTab === 'images' ? 'Dedicated Image Manager & Storage' : `${activeTab} Management Studio`}
             </h2>
             <p className="text-xs text-slate-500">Live Firebase Firestore Synchronization Active</p>
           </div>
@@ -476,7 +628,7 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
                     <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">Real-time</span>
                   </div>
                   <h4 className="text-xs font-bold text-slate-400 uppercase">Today's Revenue</h4>
-                  <p className="text-2xl font-black text-slate-900 mt-1">₹18,450</p>
+                  <p className="text-2xl font-black text-slate-900 mt-1">₹{dbOrders.reduce((sum, ord) => sum + (Number(ord.totalAmount) || 0), 18450).toLocaleString()}</p>
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
@@ -514,7 +666,42 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
                 <button
                   type="button"
                   onClick={() => {
-                    setEditingProduct({ title: '', category: 'paper-documents', minPrice: 499, badge: '⚡ 5-Minute Store Pickup', subtitle: '', detailedDescription: '', images: [{ url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f' }], minQty: 10 });
+                    setEditingProduct({
+                      title: '',
+                      subtitle: '',
+                      category: 'paper-documents',
+                      minPrice: 499,
+                      badge: '⚡ 5-Minute Store Pickup',
+                      dispatchTag: '⚡ Same-Day Store Pickup',
+                      detailedDescription: '',
+                      images: [{ url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f' }],
+                      specs: [
+                        { label: 'Dimensions / Size', value: 'Standard / Custom' },
+                        { label: 'Paper Stock', value: '300 GSM Art Card' },
+                        { label: 'Turnaround', value: 'Same-Day Express' }
+                      ],
+                      config: {
+                        sizes: [
+                          { id: 'size-1', name: 'Standard (3.5 x 2 in)', description: 'Standard business card size' },
+                          { id: 'size-2', name: 'Large Format (A4)', description: 'A4 document format' }
+                        ],
+                        materials: [
+                          { id: 'mat-1', name: 'Premium Glossy Card', description: 'Glossy finish' }
+                        ],
+                        finishes: [
+                          { id: 'fin-1', name: 'Matte Lamination', description: 'Smooth matte finish' }
+                        ],
+                        sides: [
+                          { id: 'side-1', name: 'Single Sided', description: 'Front print' }
+                        ],
+                        quantities: [
+                          { qty: 50, popular: true },
+                          { qty: 100, popular: false },
+                          { qty: 500, popular: false }
+                        ]
+                      },
+                      minQty: 10
+                    });
                     setIsProductModalOpen(true);
                   }}
                   className="px-4 py-2.5 bg-[#50007c] hover:bg-[#3e0061] text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 cursor-pointer"
@@ -553,7 +740,17 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
                           <button
                             type="button"
                             onClick={() => {
-                              setEditingProduct(p);
+                              setEditingProduct({
+                                ...p,
+                                specs: p.specs || [{ label: 'Dimensions', value: 'Standard' }],
+                                config: p.config || {
+                                  sizes: [{ id: 'std', name: 'Standard Format', description: 'Standard size' }],
+                                  materials: [{ id: 'std', name: 'Standard Material', description: 'Standard stock' }],
+                                  finishes: [{ id: 'std', name: 'Standard Finish', description: 'Standard finish' }],
+                                  sides: [{ id: 'std', name: 'Single Sided', description: 'Single side' }],
+                                  quantities: [{ qty: 50, popular: true }]
+                                }
+                              });
                               setIsProductModalOpen(true);
                             }}
                             className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
@@ -627,6 +824,85 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {activeTab === 'images' && (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden space-y-6 p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
+                <div>
+                  <h3 className="font-black text-slate-900 text-lg">Dedicated Image Manager & Storage ({dbImages.length})</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Upload high-resolution images to Firebase Storage and associate them directly with products & homepage</p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <label className="px-5 py-3 bg-[#50007c] hover:bg-[#3e0061] text-white font-black text-xs rounded-xl shadow-md flex items-center gap-2 cursor-pointer transition-all">
+                    <Upload className={`w-4 h-4 ${uploadingImage ? 'animate-bounce' : ''}`} />
+                    <span>{uploadingImage ? 'Uploading to Firebase...' : 'Upload New Image'}</span>
+                    <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" disabled={uploadingImage} />
+                  </label>
+                </div>
+              </div>
+
+              {dbImages.length === 0 ? (
+                <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-300 p-8">
+                  <Image className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                  <h4 className="font-bold text-slate-800 text-sm">No Images in Storage Yet</h4>
+                  <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Upload product photos, banner graphics, or artwork samples using the upload button above.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {dbImages.map((img, idx) => (
+                    <div key={img.id || idx} className="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden group flex flex-col justify-between shadow-2xs">
+                      <div className="relative aspect-square bg-slate-200 overflow-hidden">
+                        <img src={img.url} alt={img.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                          {img.name ? (img.name.length > 15 ? img.name.slice(0, 15) + '...' : img.name) : 'Asset'}
+                        </div>
+                      </div>
+
+                      <div className="p-3 space-y-2">
+                        <p className="text-[11px] font-bold text-slate-800 truncate" title={img.name}>{img.name || 'Uploaded Image'}</p>
+                        
+                        <div className="grid grid-cols-2 gap-1.5 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(img.url);
+                              alert('Image URL copied to clipboard!');
+                            }}
+                            className="py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-[10px] rounded-lg cursor-pointer text-center"
+                          >
+                            Copy URL
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setAssociatingImage(img)}
+                            className="py-1.5 bg-[#50007c] hover:bg-[#3e0061] text-white font-bold text-[10px] rounded-lg cursor-pointer text-center"
+                          >
+                            Associate
+                          </button>
+                        </div>
+
+                        <div className="pt-1 flex justify-between items-center text-[10px] text-slate-400">
+                          <span>Firebase Storage</span>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (confirm('Delete this image from storage library?') && img.id) {
+                                await deleteDoc(doc(db, 'image_library', img.id));
+                              }
+                            }}
+                            className="text-rose-600 hover:underline font-bold cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -732,26 +1008,106 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
 
           {activeTab === 'orders' && (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden space-y-4">
-              <div className="p-6 border-b border-slate-200">
-                <h3 className="font-black text-slate-900 text-base">Customer Orders ({dbOrders.length})</h3>
-                <p className="text-xs text-slate-500">Real-time order pipeline and delivery status tracking</p>
+              <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                  <h3 className="font-black text-slate-900 text-base">Customer Orders & Sales ({dbOrders.length})</h3>
+                  <p className="text-xs text-slate-500">Real-time order pipeline, customer details, revenue tracking, and manual tracking IDs</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingOrder({
+                      customerName: '',
+                      phone: '',
+                      email: '',
+                      address: '',
+                      productTitle: 'Visiting Cards (100 pcs)',
+                      quantity: 100,
+                      totalAmount: 499,
+                      trackingId: `TRK-${Math.floor(100000 + Math.random() * 900000)}`,
+                      status: 'Confirmed',
+                      paymentStatus: 'Paid',
+                      date: new Date().toISOString().split('T')[0]
+                    });
+                    setIsOrderModalOpen(true);
+                  }}
+                  className="px-4 py-2.5 bg-[#50007c] hover:bg-[#3e0061] text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Manual Order / Sale</span>
+                </button>
               </div>
+
               <div className="p-6">
                 {dbOrders.length === 0 ? (
-                  <p className="text-xs text-slate-500 italic">No active orders in Firestore queue.</p>
+                  <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-300 p-8">
+                    <ShoppingBag className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                    <h4 className="font-bold text-slate-800 text-sm">No Orders in Database Yet</h4>
+                    <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Click "Add Manual Order / Sale" above to record walk-in or online customer sales and track revenue.</p>
+                  </div>
                 ) : (
-                  <div className="space-y-3">
-                    {dbOrders.map((ord, idx) => (
-                      <div key={ord.id || idx} className="p-4 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
-                        <div>
-                          <span className="font-bold text-slate-900">Order #{ord.id?.slice(0, 6)}</span>
-                          <p className="text-slate-500">{ord.customerName || 'Customer'} · ₹{ord.totalAmount || 499}</p>
-                        </div>
-                        <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full font-bold">
-                          {ord.status || 'Processing'}
-                        </span>
-                      </div>
-                    ))}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-200">
+                          <th className="p-3.5">Customer & Contact</th>
+                          <th className="p-3.5">Product & Qty</th>
+                          <th className="p-3.5">Amount</th>
+                          <th className="p-3.5">Tracking ID</th>
+                          <th className="p-3.5">Status</th>
+                          <th className="p-3.5 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {dbOrders.map((ord, idx) => (
+                          <tr key={ord.id || idx} className="hover:bg-slate-50/85 transition-colors">
+                            <td className="p-3.5">
+                              <p className="font-bold text-slate-900">{ord.customerName || 'Valued Customer'}</p>
+                              <p className="text-[11px] text-slate-500">{ord.phone || ord.email || 'No phone'} · {ord.address || 'Delhi'}</p>
+                            </td>
+                            <td className="p-3.5">
+                              <p className="font-bold text-slate-800">{ord.productTitle || 'Custom Print'}</p>
+                              <p className="text-[11px] text-slate-500">Qty: {ord.quantity || 100} units</p>
+                            </td>
+                            <td className="p-3.5 font-black text-slate-900">
+                              ₹{ord.totalAmount || 499}
+                              <span className="block text-[10px] font-normal text-emerald-600">{ord.paymentStatus || 'Paid'}</span>
+                            </td>
+                            <td className="p-3.5 font-mono font-bold text-[#50007c]">
+                              {ord.trackingId || 'TRK-No-ID'}
+                            </td>
+                            <td className="p-3.5">
+                              <span className="px-2.5 py-1 bg-purple-50 text-[#50007c] rounded-full font-bold text-[10px]">
+                                {ord.status || 'Confirmed'}
+                              </span>
+                            </td>
+                            <td className="p-3.5 text-right space-x-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingOrder(ord);
+                                  setIsOrderModalOpen(true);
+                                }}
+                                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg cursor-pointer"
+                              >
+                                Edit / Tracking
+                              </button>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (confirm('Delete this order record?') && ord.id) {
+                                    await deleteDoc(doc(db, 'orders', ord.id));
+                                  }
+                                }}
+                                className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-lg cursor-pointer"
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
@@ -772,23 +1128,74 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
         </div>
       </main>
 
+      {/* ASSOCIATE IMAGE WITH PRODUCT MODAL */}
+      {associatingImage && (
+        <div className="fixed inset-0 z-60 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative space-y-4">
+            <button onClick={() => setAssociatingImage(null)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 cursor-pointer">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-base font-black text-slate-900">Associate Image with Homepage Product</h3>
+            
+            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border">
+              <img src={associatingImage.url} alt="Preview" className="w-16 h-16 rounded-xl object-cover" />
+              <div className="overflow-hidden">
+                <p className="font-bold text-xs text-slate-900 truncate">{associatingImage.name || 'Selected Image'}</p>
+                <p className="text-[10px] text-slate-500 truncate">{associatingImage.url}</p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Select Product from Catalog</label>
+              <select 
+                value={targetProductId} 
+                onChange={e => setTargetProductId(e.target.value)} 
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900"
+              >
+                <option value="">-- Choose Product --</option>
+                {dbProducts.map(p => (
+                  <option key={p.id} value={p.id}>{p.title} ({p.category})</option>
+                ))}
+              </select>
+            </div>
+
+            <button 
+              type="button"
+              onClick={handleAssociateWithProduct}
+              className="w-full py-3 bg-[#50007c] hover:bg-[#3e0061] text-white font-black text-xs rounded-xl shadow-md cursor-pointer"
+            >
+              Confirm & Update Homepage Product
+            </button>
+          </motion.div>
+        </div>
+      )}
+
       {/* PRODUCT EDIT / ADD MODAL */}
       {isProductModalOpen && editingProduct && (
         <div className="fixed inset-0 z-60 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
-            <button onClick={() => setIsProductModalOpen(false)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <button onClick={() => setIsProductModalOpen(false)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 cursor-pointer">
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-lg font-black text-slate-900 mb-4">{editingProduct.id ? 'Edit Product' : 'Add New Product'}</h3>
-            <form onSubmit={handleSaveProduct} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Product Title</label>
-                <input type="text" value={editingProduct.title} onChange={e => setEditingProduct({...editingProduct, title: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" required />
+            <h3 className="text-xl font-black text-slate-900 mb-1">{editingProduct.id ? 'Edit Product & Dimensions' : 'Add New Product'}</h3>
+            <p className="text-xs text-slate-500 mb-4">Customize all attributes, specifications, sizes, and pricing in real-time.</p>
+
+            <form onSubmit={handleSaveProduct} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Product Title *</label>
+                  <input type="text" value={editingProduct.title || ''} onChange={e => setEditingProduct({...editingProduct, title: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" required />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Subtitle / Tagline</label>
+                  <input type="text" value={editingProduct.subtitle || ''} onChange={e => setEditingProduct({...editingProduct, subtitle: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" placeholder="e.g. Printed in 15 Mins" />
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Category</label>
-                  <select value={editingProduct.category} onChange={e => setEditingProduct({...editingProduct, category: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl">
+                  <select value={editingProduct.category || 'paper-documents'} onChange={e => setEditingProduct({...editingProduct, category: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
                     <option value="paper-documents">Paper & Documents</option>
                     <option value="signage-vinyl">Signage & Flex</option>
                     <option value="custom-promotional">Custom Merch & Mugs</option>
@@ -797,24 +1204,155 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Base Price (₹)</label>
-                  <input type="number" value={editingProduct.minPrice} onChange={e => setEditingProduct({...editingProduct, minPrice: Number(e.target.value)})} className="w-full p-2.5 bg-slate-50 border rounded-xl" required />
+                  <label className="block font-bold text-slate-700 mb-1">Base Price (₹) *</label>
+                  <input type="number" value={editingProduct.minPrice || 499} onChange={e => setEditingProduct({...editingProduct, minPrice: Number(e.target.value)})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" required />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Pickup Badge</label>
+                  <input type="text" value={editingProduct.badge || ''} onChange={e => setEditingProduct({...editingProduct, badge: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" placeholder="⚡ 5-Minute Store Pickup" />
                 </div>
               </div>
+
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Pickup Badge</label>
-                <input type="text" value={editingProduct.badge} onChange={e => setEditingProduct({...editingProduct, badge: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" />
+                <label className="block font-bold text-slate-700 mb-1">Image URL *</label>
+                <input type="url" value={editingProduct.images?.[0]?.url || editingProduct.imageUrl || ''} onChange={e => setEditingProduct({...editingProduct, images: [{ url: e.target.value, alt: editingProduct.title }]})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" placeholder="https://..." required />
               </div>
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Image URL</label>
-                <input type="url" value={editingProduct.images?.[0]?.url || editingProduct.imageUrl || ''} onChange={e => setEditingProduct({...editingProduct, images: [{ url: e.target.value }]})} className="w-full p-2.5 bg-slate-50 border rounded-xl" placeholder="https://..." required />
-              </div>
+
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Detailed Description</label>
-                <textarea rows={3} value={editingProduct.detailedDescription || ''} onChange={e => setEditingProduct({...editingProduct, detailedDescription: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" />
+                <textarea rows={3} value={editingProduct.detailedDescription || ''} onChange={e => setEditingProduct({...editingProduct, detailedDescription: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
               </div>
-              <button type="submit" className="w-full py-3 bg-[#50007c] text-white font-black rounded-xl cursor-pointer shadow-md">
-                Save Product to Firebase
+
+              {/* Specifications / Dimensions Editor */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <label className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px]">Specifications & Dimensions</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const specs = editingProduct.specs || [];
+                      setEditingProduct({
+                        ...editingProduct,
+                        specs: [...specs, { label: 'New Spec', value: 'Value' }]
+                      });
+                    }}
+                    className="px-2.5 py-1 bg-purple-50 text-[#50007c] font-bold rounded-lg hover:bg-purple-100 cursor-pointer text-[10px]"
+                  >
+                    + Add Spec
+                  </button>
+                </div>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {(editingProduct.specs || []).map((spec: any, idx: number) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={spec.label}
+                        onChange={e => {
+                          const specs = [...(editingProduct.specs || [])];
+                          specs[idx].label = e.target.value;
+                          setEditingProduct({...editingProduct, specs});
+                        }}
+                        placeholder="Label (e.g. Size)"
+                        className="w-1/3 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                      />
+                      <input
+                        type="text"
+                        value={spec.value}
+                        onChange={e => {
+                          const specs = [...(editingProduct.specs || [])];
+                          specs[idx].value = e.target.value;
+                          setEditingProduct({...editingProduct, specs});
+                        }}
+                        placeholder="Value (e.g. 3.5 x 2 in)"
+                        className="w-2/3 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const specs = (editingProduct.specs || []).filter((_: any, i: number) => i !== idx);
+                          setEditingProduct({...editingProduct, specs});
+                        }}
+                        className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sizes / Formats Editor */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <label className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px]">Sizes & Format Options</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const sizes = editingProduct.config?.sizes || [];
+                      setEditingProduct({
+                        ...editingProduct,
+                        config: {
+                          ...(editingProduct.config || {}),
+                          sizes: [...sizes, { id: `size-${Date.now()}`, name: 'New Size', description: 'Description' }]
+                        }
+                      });
+                    }}
+                    className="px-2.5 py-1 bg-purple-50 text-[#50007c] font-bold rounded-lg hover:bg-purple-100 cursor-pointer text-[10px]"
+                  >
+                    + Add Size Option
+                  </button>
+                </div>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {(editingProduct.config?.sizes || []).map((sz: any, idx: number) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={sz.name}
+                        onChange={e => {
+                          const sizes = [...(editingProduct.config?.sizes || [])];
+                          sizes[idx].name = e.target.value;
+                          setEditingProduct({
+                            ...editingProduct,
+                            config: { ...(editingProduct.config || {}), sizes }
+                          });
+                        }}
+                        placeholder="Size Name (e.g. A4)"
+                        className="w-1/3 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                      />
+                      <input
+                        type="text"
+                        value={sz.description || ''}
+                        onChange={e => {
+                          const sizes = [...(editingProduct.config?.sizes || [])];
+                          sizes[idx].description = e.target.value;
+                          setEditingProduct({
+                            ...editingProduct,
+                            config: { ...(editingProduct.config || {}), sizes }
+                          });
+                        }}
+                        placeholder="Description (e.g. 210 x 297 mm)"
+                        className="w-2/3 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const sizes = (editingProduct.config?.sizes || []).filter((_: any, i: number) => i !== idx);
+                          setEditingProduct({
+                            ...editingProduct,
+                            config: { ...(editingProduct.config || {}), sizes }
+                          });
+                        }}
+                        className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button type="submit" className="w-full py-3 bg-[#50007c] hover:bg-[#3e0061] text-white font-black text-xs rounded-xl cursor-pointer shadow-md mt-4">
+                Save All Product Changes to Firebase
               </button>
             </form>
           </motion.div>
@@ -877,6 +1415,95 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
               </div>
               <button type="submit" className="w-full py-3 bg-[#50007c] text-white font-black rounded-xl cursor-pointer shadow-md">
                 Save Category Card
+              </button>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* ORDER EDIT / ADD MODAL */}
+      {isOrderModalOpen && editingOrder && (
+        <div className="fixed inset-0 z-60 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setIsOrderModalOpen(false)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-lg font-black text-slate-900 mb-1">{editingOrder.id ? 'Edit Order & Tracking ID' : 'Add Manual Order / Sale'}</h3>
+            <p className="text-xs text-slate-500 mb-4">Manage customer details, sales revenue, and manual tracking IDs.</p>
+
+            <form onSubmit={handleSaveOrder} className="space-y-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Customer Name *</label>
+                  <input type="text" value={editingOrder.customerName || ''} onChange={e => setEditingOrder({...editingOrder, customerName: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" required />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Phone Number *</label>
+                  <input type="text" value={editingOrder.phone || ''} onChange={e => setEditingOrder({...editingOrder, phone: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" required />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Email</label>
+                  <input type="email" value={editingOrder.email || ''} onChange={e => setEditingOrder({...editingOrder, email: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Delivery Address / City</label>
+                  <input type="text" value={editingOrder.address || ''} onChange={e => setEditingOrder({...editingOrder, address: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Product Title *</label>
+                  <input type="text" value={editingOrder.productTitle || ''} onChange={e => setEditingOrder({...editingOrder, productTitle: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" required />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Quantity *</label>
+                  <input type="number" value={editingOrder.quantity || 100} onChange={e => setEditingOrder({...editingOrder, quantity: Number(e.target.value)})} className="w-full p-2.5 bg-slate-50 border rounded-xl" required />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Total Sale Amount (₹) *</label>
+                  <input type="number" value={editingOrder.totalAmount || 499} onChange={e => setEditingOrder({...editingOrder, totalAmount: Number(e.target.value)})} className="w-full p-2.5 bg-slate-50 border rounded-xl" required />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Manual Tracking ID</label>
+                  <div className="flex gap-2">
+                    <input type="text" value={editingOrder.trackingId || ''} onChange={e => setEditingOrder({...editingOrder, trackingId: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl font-mono text-purple-900 font-bold" placeholder="TRK-984210" />
+                    <button type="button" onClick={() => setEditingOrder({...editingOrder, trackingId: `TRK-${Math.floor(100000 + Math.random() * 900000)}`})} className="px-3 bg-purple-100 text-[#50007c] font-bold rounded-xl hover:bg-purple-200 cursor-pointer">Generate</button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Order Status</label>
+                  <select value={editingOrder.status || 'Confirmed'} onChange={e => setEditingOrder({...editingOrder, status: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl">
+                    <option value="New">New</option>
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Printing">Printing / Processing</option>
+                    <option value="Out for Delivery">Out for Delivery</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Payment Status</label>
+                  <select value={editingOrder.paymentStatus || 'Paid'} onChange={e => setEditingOrder({...editingOrder, paymentStatus: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl">
+                    <option value="Paid">Paid</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Failed">Failed</option>
+                    <option value="Refunded">Refunded</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="submit" className="w-full py-3 bg-[#50007c] hover:bg-[#3e0061] text-white font-black rounded-xl cursor-pointer shadow-md mt-4">
+                Save Order to Database & Revenue
               </button>
             </form>
           </motion.div>

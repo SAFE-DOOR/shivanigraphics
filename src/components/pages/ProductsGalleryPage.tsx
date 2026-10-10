@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Search, MessageCircle, Sparkles, Image as ImageIcon, ZoomIn, X, ExternalLink } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { ProductItem } from '../../types';
 import { CATEGORIES } from '../../data/products';
 import { WHATSAPP_PRIMARY } from '../../utils/whatsapp';
@@ -178,26 +179,33 @@ export const ProductsGalleryPage: React.FC<ProductsGalleryPageProps> = ({
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {filteredStorageImages.map((img, idx) => (
-              <div
-                key={idx}
-                onClick={() => setLightboxImage(img.url)}
-                className="group relative bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs cursor-pointer aspect-square flex items-center justify-center"
-              >
-                <img
-                  src={img.url}
-                  alt={img.name}
-                  loading="lazy"
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
-                />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                  <ZoomIn className="w-6 h-6" />
-                </div>
-                <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/70 backdrop-blur-xs text-white text-[9px] font-mono rounded truncate max-w-[85%]">
-                  {img.name}
-                </span>
-              </div>
-            ))}
+            <AnimatePresence>
+              {filteredStorageImages.map((img, idx) => (
+                <motion.div
+                  key={img.url || idx}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  onClick={() => setLightboxImage(img.url)}
+                  className="group relative bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs cursor-pointer aspect-square flex items-center justify-center"
+                >
+                  <img
+                    src={img.url}
+                    alt={img.name}
+                    loading="lazy"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                    <ZoomIn className="w-6 h-6" />
+                  </div>
+                  <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/70 backdrop-blur-xs text-white text-[9px] font-mono rounded truncate max-w-[85%]">
+                    {img.name}
+                  </span>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         </div>
       )}
@@ -219,74 +227,82 @@ export const ProductsGalleryPage: React.FC<ProductsGalleryPageProps> = ({
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredProducts.map(p => (
-              <div
-                key={p.id}
-                onClick={() => onSelectProduct(p)}
-                className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden cursor-pointer hover:shadow-2xl hover:border-[#50007c]/40 transition-all duration-300 group flex flex-col justify-between"
-              >
-                <div>
-                  <div className="relative aspect-square bg-slate-100 overflow-hidden">
-                    <img
-                      src={p.images[0]?.url}
-                      alt={p.title}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
-                    />
-                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center justify-center text-white">
-                      <span className="p-2.5 rounded-full bg-black/60 backdrop-blur-xs shadow-lg">
-                        <ZoomIn className="w-5 h-5 text-white" />
+            <AnimatePresence>
+              {filteredProducts.map(p => (
+                <motion.div
+                  key={p.id}
+                  layout
+                  initial={{ opacity: 0, y: 15, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  whileHover={{ y: -4, scale: 1.01 }}
+                  onClick={() => onSelectProduct(p)}
+                  className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden cursor-pointer hover:shadow-2xl hover:border-[#50007c]/40 transition-shadow duration-300 group flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="relative aspect-square bg-slate-100 overflow-hidden">
+                      <img
+                        src={p.images[0]?.url}
+                        alt={p.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                      />
+                      <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center justify-center text-white">
+                        <span className="p-2.5 rounded-full bg-black/60 backdrop-blur-xs shadow-lg">
+                          <ZoomIn className="w-5 h-5 text-white" />
+                        </span>
+                      </div>
+                      {p.featureBadge && (
+                        <span className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-orange-600 text-white text-[10px] font-black rounded-md shadow-xs">
+                          {p.featureBadge}
+                        </span>
+                      )}
+                      {p.badge && (
+                        <span className="absolute top-2.5 right-2.5 px-2 py-0.5 bg-purple-900 text-white text-[10px] font-bold rounded-md shadow-xs">
+                          {p.badge}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="p-4 space-y-1.5">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                        {p.categoryLabel}
+                      </span>
+                      <h3 className="text-sm font-black text-slate-900 group-hover:text-[#50007c] line-clamp-1">
+                        {p.title}
+                      </h3>
+                      {p.subtitle && (
+                        <p className="text-[11px] text-orange-600 font-medium line-clamp-1">
+                          {p.subtitle}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-4 pt-0 flex items-center justify-between border-t border-slate-100 mt-2">
+                    <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md">
+                      {p.dispatchTag || '⚡ Express Ready'}
+                    </span>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={(e) => handleQuickWhatsApp(p, e)}
+                        className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors cursor-pointer"
+                        title="Quick WhatsApp Order"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </button>
+                      <span className="text-xs font-black text-[#50007c] group-hover:translate-x-0.5 transition-transform">
+                        View →
                       </span>
                     </div>
-                    {p.featureBadge && (
-                      <span className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-orange-600 text-white text-[10px] font-black rounded-md shadow-xs">
-                        {p.featureBadge}
-                      </span>
-                    )}
-                    {p.badge && (
-                      <span className="absolute top-2.5 right-2.5 px-2 py-0.5 bg-purple-900 text-white text-[10px] font-bold rounded-md shadow-xs">
-                        {p.badge}
-                      </span>
-                    )}
                   </div>
-
-                  <div className="p-4 space-y-1.5">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                      {p.categoryLabel}
-                    </span>
-                    <h3 className="text-sm font-black text-slate-900 group-hover:text-[#50007c] line-clamp-1">
-                      {p.title}
-                    </h3>
-                    {p.subtitle && (
-                      <p className="text-[11px] text-orange-600 font-medium line-clamp-1">
-                        {p.subtitle}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="p-4 pt-0 flex items-center justify-between border-t border-slate-100 mt-2">
-                  <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md">
-                    {p.dispatchTag || '⚡ Express Ready'}
-                  </span>
-
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={(e) => handleQuickWhatsApp(p, e)}
-                      className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors cursor-pointer"
-                      title="Quick WhatsApp Order"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                    </button>
-                    <span className="text-xs font-black text-[#50007c] group-hover:translate-x-0.5 transition-transform">
-                      View →
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>
