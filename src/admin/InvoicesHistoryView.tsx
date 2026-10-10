@@ -16,10 +16,14 @@ export const InvoicesHistoryView: React.FC = () => {
     email: '',
     address: '',
     productTitle: 'Custom Commercial Print Job',
-    quantity: 1,
-    totalAmount: 999,
+    quantity: 3,
+    unitPrice: 500,
     paymentStatus: 'Paid' as const
   });
+
+  const subtotal = Number(manualForm.quantity) * Number(manualForm.unitPrice);
+  const gstAmount = subtotal * 0.18;
+  const calculatedGrandTotal = subtotal + gstAmount;
 
   const filteredInvoices = invoices.filter(inv => 
     inv.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -38,8 +42,8 @@ export const InvoicesHistoryView: React.FC = () => {
       address: manualForm.address || 'New Delhi',
       productTitle: manualForm.productTitle,
       quantity: Number(manualForm.quantity),
-      options: 'Standard Commercial Print',
-      totalAmount: Number(manualForm.totalAmount),
+      options: `Unit Price: ₹${manualForm.unitPrice} | 18% GST Included`,
+      totalAmount: Math.round(calculatedGrandTotal * 100) / 100,
       paymentStatus: manualForm.paymentStatus,
       date: new Date().toISOString().split('T')[0]
     };
@@ -52,8 +56,8 @@ export const InvoicesHistoryView: React.FC = () => {
       email: '',
       address: '',
       productTitle: 'Custom Commercial Print Job',
-      quantity: 1,
-      totalAmount: 999,
+      quantity: 3,
+      unitPrice: 500,
       paymentStatus: 'Paid'
     });
   };
@@ -257,15 +261,35 @@ export const InvoicesHistoryView: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Grand Total (₹ with 18% GST)</label>
+                  <label className="font-bold text-slate-700 block mb-1">Unit Price (₹)</label>
                   <input
                     type="number"
                     min="1"
                     required
-                    value={manualForm.totalAmount}
-                    onChange={(e) => setManualForm({ ...manualForm, totalAmount: Number(e.target.value) })}
+                    value={manualForm.unitPrice}
+                    onChange={(e) => setManualForm({ ...manualForm, unitPrice: Number(e.target.value) })}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-medium focus:ring-2 focus:ring-[#50007c] outline-none"
                   />
+                </div>
+              </div>
+
+              {/* Auto Calculator Live Summary Box */}
+              <div className="bg-purple-50/70 border border-purple-200 rounded-2xl p-4 space-y-2 text-xs">
+                <div className="font-black text-[#50007c] uppercase tracking-wider text-[11px] flex items-center justify-between">
+                  <span>⚡ Auto-Calculator Summary</span>
+                  <span>GST 18% Included</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Subtotal ({manualForm.quantity} × ₹{manualForm.unitPrice}):</span>
+                  <span className="font-bold text-slate-900">₹{subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>GST (18%):</span>
+                  <span className="font-bold text-slate-900">₹{gstAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-slate-900 font-black text-sm pt-2 border-t border-purple-200">
+                  <span>Grand Total:</span>
+                  <span className="text-[#50007c]">₹{calculatedGrandTotal.toFixed(2)}</span>
                 </div>
               </div>
 

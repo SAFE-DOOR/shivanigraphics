@@ -68,18 +68,23 @@ export const AboutUsPage: React.FC<AboutUsPageProps> = ({ onBackToHome, onExplor
           )}
         </div>
 
-        {/* Big Facility Banner */}
-        <div className="relative rounded-3xl overflow-hidden shadow-xl aspect-16/9 max-h-96 border border-slate-200">
-          <img 
-            src="https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&w=1200&q=80" 
-            alt="Shivani Graphics digital print press facility"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-6 sm:p-8 flex flex-col justify-end text-white">
-            <p className="font-black text-xl sm:text-2xl">Industrial Grade Precision · Zero Compromise</p>
-            <p className="text-xs sm:text-sm text-slate-200 mt-1 max-w-xl">
-              Factory calibrated to ISO 12647 & Fogra-39 color standards for razor-sharp CMYK reproduction on all substrates.
-            </p>
+        {/* Big Facility Banner with User Provided Photo */}
+        <div className="space-y-3">
+          <div className="relative rounded-3xl overflow-hidden shadow-2xl aspect-16/9 max-h-[480px] border-2 border-purple-200 bg-slate-900">
+            <img 
+              src="https://plain-apac-prod-public.komododecks.com/202610/10/gw7e2RHm9Po8Lape78vz/image.png" 
+              alt="Shivani Graphics Store & Facility"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-6 sm:p-8 flex flex-col justify-end text-white">
+              <span className="inline-block px-3 py-1 bg-orange-500 text-white rounded-full text-xs font-bold w-fit mb-2">
+                Live Studio & Workshop View
+              </span>
+              <p className="font-black text-xl sm:text-3xl">Shivani Graphics — Mahavir Enclave, New Delhi</p>
+              <p className="text-xs sm:text-sm text-slate-200 mt-1 max-w-2xl">
+                Our fully equipped digital printing studio, retail counter, and production floor delivering instant counter service and same-day corporate prints.
+              </p>
+            </div>
           </div>
         </div>
 

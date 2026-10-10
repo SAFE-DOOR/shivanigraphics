@@ -14,6 +14,7 @@ import { HelpCenter } from './components/HelpCenter';
 import { Footer, PolicyRoute } from './components/Footer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 import { PrepressAiAdvisorModal } from './components/PrepressAiAdvisorModal';
+import { GeminiChatWidget } from './components/GeminiChatWidget';
 import { CartModal } from './components/CartModal';
 import { BulkQuoteModal } from './components/BulkQuoteModal';
 import { playWelcomeVoiceGreeting, hasBeenGreeted, isVoiceMuted } from './utils/voiceGreeting';
@@ -393,6 +394,7 @@ function AppContent() {
       {/* 6. Round Green Floating WhatsApp Button & Prepress AI Advisor */}
       <FloatingWhatsApp />
       <PrepressAiAdvisorModal />
+      <GeminiChatWidget />
 
       {/* 7. Non-Disruptive Functional Utilities */}
       <CartModal

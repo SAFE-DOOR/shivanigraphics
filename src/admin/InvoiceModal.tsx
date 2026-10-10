@@ -26,10 +26,29 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
     (html2pdf() as any).from(element).set(opt).save();
   };
 
+  const qty = order.quantity || 1;
+  const total = order.totalAmount || 0;
+  
+  // Extract unit price or calculate auto
+  let unitPrice = total / qty / 1.18;
+  if (order.options && order.options.includes('Unit Price:')) {
+    const match = order.options.match(/Unit Price:\s*₹([0-9.]+)/);
+    if (match && match[1]) {
+      unitPrice = Number(match[1]);
+    }
+  }
+
+  const subtotal = qty * unitPrice;
+  const gstTotal = subtotal * 0.18;
+  const cgst = gstTotal / 2;
+  const sgst = gstTotal / 2;
+  const grandTotal = subtotal + gstTotal;
+
   return (
     <div className="fixed inset-0 z-70 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-3xl max-w-2xl w-full p-8 space-y-6 shadow-2xl relative">
         
+        {/* Header Controls */}
         <div className="flex items-center justify-between border-b border-slate-200 pb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#50007c] text-white flex items-center justify-center font-black">
@@ -37,7 +56,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
             </div>
             <div>
               <h3 className="text-base font-black text-slate-900">Shivani Graphics Tax Invoice</h3>
-              <p className="text-xs text-slate-500 font-mono">GSTIN: 07AGJPR4456J1ZW</p>
+              <p className="text-xs text-slate-500 font-mono">GSTIN: 07AGJPR4456J1ZW · Delhi State Code: 07</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -53,70 +72,95 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
             >
               <Printer className="w-4 h-4" /> Print
             </button>
-            <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer">
+            <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer font-bold">
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Printable / Downloadable Container */}
-        <div id="invoice-pdf-container" className="space-y-4 text-xs text-slate-700 p-2 bg-white">
+        {/* Printable / Downloadable Invoice Container */}
+        <div id="invoice-pdf-container" className="space-y-5 text-xs text-slate-700 p-4 bg-white rounded-2xl border border-slate-100 shadow-2xs">
+          
+          {/* Company & Client Banner */}
           <div className="flex justify-between bg-slate-50 p-4 rounded-2xl border border-slate-200">
             <div>
-              <p className="font-bold text-slate-900">Billed To:</p>
-              <p className="font-semibold text-slate-800">{order.customerName}</p>
-              <p>{order.address}</p>
-              <p>Phone: {order.phone}</p>
-              {order.email && <p>Email: {order.email}</p>}
+              <p className="font-extrabold text-slate-900 uppercase tracking-wide text-xs mb-1">Billed To:</p>
+              <p className="font-bold text-slate-900 text-sm">{order.customerName}</p>
+              <p className="text-slate-600">{order.address || 'New Delhi, India'}</p>
+              <p className="text-slate-600 font-medium">Phone: {order.phone}</p>
+              {order.email && <p className="text-slate-600">Email: {order.email}</p>}
             </div>
-            <div className="text-right">
-              <p className="font-bold text-slate-900">Invoice Details:</p>
-              <p><strong className="text-purple-800">Order/Inv ID:</strong> {order.id}</p>
-              <p><strong className="text-purple-800">Date:</strong> {order.date}</p>
-              <p><strong className="text-purple-800">Payment:</strong> {order.paymentStatus}</p>
+            <div className="text-right space-y-1">
+              <p className="font-extrabold text-slate-900 uppercase tracking-wide text-xs mb-1">Invoice Details:</p>
+              <p><strong className="text-[#50007c]">Invoice ID:</strong> {order.id}</p>
+              <p><strong className="text-[#50007c]">Date:</strong> {order.date || new Date().toISOString().split('T')[0]}</p>
+              <p><strong className="text-[#50007c]">Payment:</strong> <span className="text-emerald-700 font-bold">{order.paymentStatus || 'Paid'}</span></p>
             </div>
           </div>
 
+          {/* Itemized Table */}
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 text-slate-500 font-bold">
-                <th className="py-2.5">Item Description</th>
-                <th className="py-2.5 text-center">Qty</th>
-                <th className="py-2.5 text-right">Amount (₹)</th>
+              <tr className="border-b-2 border-slate-200 text-slate-600 font-black">
+                <th className="py-3 px-2">Item Description</th>
+                <th className="py-3 px-2 text-center">Qty</th>
+                <th className="py-3 px-2 text-right">Unit Price (₹)</th>
+                <th className="py-3 px-2 text-right">Total (₹)</th>
               </tr>
             </thead>
-            <tbody>
-              <tr className="border-b border-slate-100">
-                <td className="py-3 font-semibold text-slate-900">
-                  {order.productTitle}
-                  <div className="text-[11px] text-slate-500 font-normal">Options: {order.options || 'Standard Commercial Print'}</div>
+            <tbody className="divide-y divide-slate-100">
+              <tr>
+                <td className="py-3 px-2 font-bold text-slate-900">
+                  {order.productTitle || 'Custom Commercial Print Job'}
+                  <div className="text-[11px] text-slate-500 font-normal">{order.options || 'Standard High-Quality Print'}</div>
                 </td>
-                <td className="py-3 text-center">{order.quantity}</td>
-                <td className="py-3 text-right font-black">₹{order.totalAmount}</td>
+                <td className="py-3 px-2 text-center font-bold text-slate-800">{qty}</td>
+                <td className="py-3 px-2 text-right font-semibold text-slate-700">₹{unitPrice.toFixed(2)}</td>
+                <td className="py-3 px-2 text-right font-black text-slate-900">₹{subtotal.toFixed(2)}</td>
               </tr>
             </tbody>
           </table>
 
+          {/* Auto Calculator Summary Breakdown */}
           <div className="flex justify-end pt-2">
-            <div className="w-64 space-y-1.5 text-right">
+            <div className="w-72 space-y-2 text-right bg-purple-50/40 p-4 rounded-2xl border border-purple-100">
               <div className="flex justify-between text-slate-600">
-                <span>Subtotal:</span>
-                <span>₹{(order.totalAmount / 1.18).toFixed(2)}</span>
+                <span>Taxable Subtotal:</span>
+                <span className="font-bold text-slate-900">₹{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>GST (18% ITC):</span>
-                <span>₹{(order.totalAmount - (order.totalAmount / 1.18)).toFixed(2)}</span>
+                <span>CGST (9%):</span>
+                <span className="font-semibold text-slate-700">₹{cgst.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-slate-900 font-black text-sm pt-2 border-t border-slate-200">
-                <span>Grand Total:</span>
-                <span className="text-purple-900">₹{order.totalAmount}</span>
+              <div className="flex justify-between text-slate-600">
+                <span>SGST (9%):</span>
+                <span className="font-semibold text-slate-700">₹{sgst.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-slate-900 font-black text-sm pt-2 border-t border-purple-200">
+                <span>Grand Total (Incl. GST):</span>
+                <span className="text-[#50007c]">₹{grandTotal.toFixed(2)}</span>
               </div>
             </div>
           </div>
 
-          <div className="pt-6 border-t border-slate-200 text-[11px] text-slate-500 text-center">
-            <p className="font-bold text-slate-700">Shivani Graphics · Mahavir Enclave, New Delhi 110045</p>
-            <p>Thank you for your business! For queries contact +91-9810157695 / shivanidigitalprints@gmail.com</p>
+          {/* Bank & Signature Section */}
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200 text-[11px] text-slate-600">
+            <div>
+              <p className="font-bold text-slate-900 mb-1">Bank Details for Direct Transfer:</p>
+              <p>Bank Name: HDFC Bank</p>
+              <p>A/C Name: Shivani Graphics</p>
+              <p>A/C No: 50200012345678 | IFSC: HDFC0001234</p>
+            </div>
+            <div className="text-right flex flex-col justify-end items-end">
+              <div className="h-12 border-b border-dashed border-slate-400 w-36 mb-1"></div>
+              <p className="font-bold text-slate-900">Authorised Signatory</p>
+              <p className="text-[10px] text-slate-400">Shivani Graphics</p>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-200 text-[11px] text-slate-500 text-center space-y-0.5">
+            <p className="font-bold text-slate-700">Shivani Graphics · Mahavir Enclave, New Delhi 110045 · Phone: +91-9810157695</p>
+            <p>This is a computer-generated tax invoice compliant with GST regulations.</p>
           </div>
         </div>
 

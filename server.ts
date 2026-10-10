@@ -2,6 +2,16 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import fs from 'fs';
 import path from 'path';
+import { GoogleGenAI } from '@google/genai';
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+  httpOptions: {
+    headers: {
+      'User-Agent': 'aistudio-build',
+    }
+  }
+});
 
 const DB_FILE = path.resolve(process.cwd(), 'db.json');
 
@@ -173,6 +183,33 @@ async function startServer() {
   // API Routes
   app.get('/api/db', (req, res) => {
     res.json(loadDb());
+  });
+
+  app.post('/api/gemini/chat', async (req, res) => {
+    try {
+      const { messages } = req.body;
+      if (!messages || !Array.isArray(messages)) {
+        return res.status(400).json({ error: 'Invalid messages array' });
+      }
+
+      const contents = messages.map((msg: any) => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.text }]
+      }));
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: contents,
+        config: {
+          systemInstruction: 'You are Shivani AI, the expert customer support and print advisor assistant for Shivani Graphics (a premier Printo-style commercial printing service in Delhi NCR). You help customers with visiting cards, flex banners, corporate gifts, signage, document printing, file uploads, bulk quotes, and store pickups in Mahavir Enclave, New Delhi. Be polite, professional, and helpful.'
+        }
+      });
+
+      res.json({ text: response.text || 'Sorry, I could not generate a response.' });
+    } catch (err: any) {
+      console.error('Gemini chat error:', err);
+      res.status(500).json({ error: err.message || 'AI service error' });
+    }
   });
 
   app.all('/api/:collection/:id?', (req, res) => {

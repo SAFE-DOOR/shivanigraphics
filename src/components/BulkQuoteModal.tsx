@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { X, Briefcase, MessageCircle, ArrowRight, ShieldCheck, Check } from 'lucide-react';
 import { WHATSAPP_PRIMARY } from '../utils/whatsapp';
 import { useToast } from '../context/ToastContext';
+import { db, handleFirestoreError, OperationType } from '../firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 interface BulkQuoteModalProps {
   isOpen: boolean;
@@ -12,6 +14,8 @@ export const BulkQuoteModal: React.FC<BulkQuoteModalProps> = ({ isOpen, onClose 
   const { showToast } = useToast();
   const [companyName, setCompanyName] = useState('');
   const [contactPerson, setContactPerson] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [productType, setProductType] = useState('Visiting Cards & Corporate Stationery');
   const [estimatedQuantity, setEstimatedQuantity] = useState('1,000+ units');
   const [hasGSTIN, setHasGSTIN] = useState(true);
@@ -19,14 +23,35 @@ export const BulkQuoteModal: React.FC<BulkQuoteModalProps> = ({ isOpen, onClose 
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const quoteId = `BULK-${Date.now().toString().slice(-6)}`;
+    const newQuote = {
+      id: quoteId,
+      customerName: `${contactPerson} (${companyName})`,
+      phone: phone || 'Not provided',
+      email: email || 'Not provided',
+      service: productType,
+      quantity: estimatedQuantity,
+      specifications: `GST Required: ${hasGSTIN ? 'Yes' : 'No'}. Notes: ${notes || 'None'}`,
+      status: 'Pending' as const,
+      date: new Date().toISOString().split('T')[0]
+    };
+
+    try {
+      await setDoc(doc(db, 'quotes', quoteId), newQuote);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `quotes/${quoteId}`);
+    }
+
     const message = [
-      `*CORPORATE / BULK PRINTING INQUIRY*`,
+      `*CORPORATE / BULK PRINTING INQUIRY* (${quoteId})`,
       `------------------------------------`,
-      `*Company Name:* ${companyName || 'Not specified'}`,
-      `*Contact Person:* ${contactPerson || 'Business Client'}`,
+      `*Company Name:* ${companyName}`,
+      `*Contact Person:* ${contactPerson}`,
+      `*Phone:* ${phone || 'N/A'}`,
+      `*Email:* ${email || 'N/A'}`,
       `*Product Category:* ${productType}`,
       `*Estimated Volume:* ${estimatedQuantity}`,
       `*GST Invoice Required:* ${hasGSTIN ? 'Yes (Require 18% ITC Tax Invoice)' : 'No'}`,
@@ -36,7 +61,7 @@ export const BulkQuoteModal: React.FC<BulkQuoteModalProps> = ({ isOpen, onClose 
       `Please provide corporate ratecard, sample kit dispatch, and volume rebates.`
     ].filter(Boolean).join('\n');
 
-    showToast('Bulk quote inquiry submitted successfully! Opening WhatsApp...', 'success');
+    showToast('Bulk quote inquiry submitted & saved in Admin Panel! Opening WhatsApp...', 'success');
     window.open(`https://wa.me/${WHATSAPP_PRIMARY}?text=${encodeURIComponent(message)}`, '_blank');
     onClose();
   };
@@ -72,7 +97,7 @@ export const BulkQuoteModal: React.FC<BulkQuoteModalProps> = ({ isOpen, onClose 
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="font-bold text-slate-700">Company / Brand Name</label>
+              <label className="font-bold text-slate-700">Company / Brand Name *</label>
               <input
                 type="text"
                 required
@@ -84,13 +109,38 @@ export const BulkQuoteModal: React.FC<BulkQuoteModalProps> = ({ isOpen, onClose 
             </div>
 
             <div className="space-y-1">
-              <label className="font-bold text-slate-700">Contact Person Name</label>
+              <label className="font-bold text-slate-700">Contact Person Name *</label>
               <input
                 type="text"
                 required
                 value={contactPerson}
                 onChange={(e) => setContactPerson(e.target.value)}
                 placeholder="Your Full Name"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-hidden focus:border-blue-600 focus:bg-white text-slate-900"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="font-bold text-slate-700">Phone Number *</label>
+              <input
+                type="tel"
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="e.g. 9876543210"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-hidden focus:border-blue-600 focus:bg-white text-slate-900"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="font-bold text-slate-700">Business Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="e.g. contact@acme.com"
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-hidden focus:border-blue-600 focus:bg-white text-slate-900"
               />
             </div>
@@ -167,16 +217,16 @@ export const BulkQuoteModal: React.FC<BulkQuoteModalProps> = ({ isOpen, onClose 
 
           <button
             type="submit"
-            className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition-transform active:scale-95"
+            className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition-transform active:scale-95 cursor-pointer"
           >
             <MessageCircle className="w-4 h-4 fill-white" />
-            <span>Submit Inquiry via WhatsApp</span>
+            <span>Submit Bulk Quote & Open WhatsApp</span>
             <ArrowRight className="w-4 h-4 ml-1" />
           </button>
 
           <p className="text-[11px] text-slate-400 text-center flex items-center justify-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-            <span>Corporate manager replies on WhatsApp within 10 minutes</span>
+            <span>Appears instantly in Admin Panel & WhatsApp manager</span>
           </p>
 
         </form>

@@ -120,6 +120,7 @@ interface AdminContextType {
   deleteInvoice: (id: string) => Promise<void>;
   quotes: AdminQuote[];
   updateQuoteStatus: (id: string, status: AdminQuote['status'], price?: number) => Promise<void>;
+  deleteQuote: (id: string) => Promise<void>;
   websiteImages: WebsiteImage[];
   updateWebsiteImage: (image: WebsiteImage) => Promise<void>;
   addWebsiteImage: (image: WebsiteImage) => Promise<void>;
@@ -470,6 +471,15 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const deleteQuote = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'quotes', id));
+      logAction(`Deleted quote: ${id}`, currentAdminUser?.name || 'Admin');
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, `quotes/${id}`);
+    }
+  };
+
   const updateWebsiteImage = async (img: WebsiteImage) => {
     try {
       await setDoc(doc(db, 'banners', img.id), img, { merge: true });
@@ -583,6 +593,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       deleteInvoice,
       quotes,
       updateQuoteStatus,
+      deleteQuote,
       websiteImages,
       updateWebsiteImage,
       addWebsiteImage,

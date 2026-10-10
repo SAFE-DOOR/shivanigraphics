@@ -332,15 +332,6 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
 
   return (
     <div className="space-y-8 pb-16">
-      
-      {/* 1. TOP ANNOUNCEMENT TICKER */}
-      <div className="bg-gradient-to-r from-[#50007c] via-purple-900 to-indigo-900 text-white text-xs py-2 px-4 text-center font-bold tracking-wide flex items-center justify-center gap-2 shadow-inner">
-        <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-        <span>⚡ Shivani Graphics Mahavir Enclave, New Delhi · 5-Minute Walk-in Counter & Same-Day Delhi NCR Delivery</span>
-        <span className="hidden sm:inline bg-amber-400 text-slate-950 px-2 py-0.5 rounded text-[10px] font-black uppercase">
-          GST Invoiced
-        </span>
-      </div>
 
       {/* UPPER CATEGORY QUICK PILLS BAR */}
       <div className="bg-white border-b border-slate-200 py-3 shadow-2xs overflow-x-auto">
