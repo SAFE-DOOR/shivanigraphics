@@ -1,5 +1,5 @@
 import React from 'react';
-import facilityImg from '../assets/images/regenerated_image_1791621825710.png';
+const facilityImg = 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=800&q=80';
 import { 
   Printer, 
   MapPin, 

@@ -115,7 +115,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="flex items-center gap-2.5 sm:gap-3 group cursor-pointer text-left"
             >
               <div className="h-11 sm:h-14 rounded-lg overflow-hidden bg-white flex items-center shadow-xs group-hover:scale-105 transition-transform">
-                <img src="https://cdn.phototourl.com/member/2026-10-10-415d9842-c350-40b2-b23d-97cdcce5e4a4.jpg" alt="Shivani Graphics" className="h-full w-auto object-contain" />
+                <img src="https://img.sanishtech.com/u/65c843b363e7b4f65c6efab5a16570b4.jpg" alt="Shivani Graphics" className="h-full w-auto object-contain" />
               </div>
               <div className="flex flex-col">
                 <span className="font-black text-sm sm:text-lg tracking-tight leading-none">

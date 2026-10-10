@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Printer, Download, CheckCircle, ShieldCheck } from 'lucide-react';
+import { X, Printer, Download, CheckCircle, ShieldCheck, ArrowLeft, QrCode } from 'lucide-react';
 import { AdminOrder } from '../context/AdminContext';
 import html2pdf from 'html2pdf.js';
 
@@ -49,31 +49,37 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
       <div className="bg-white rounded-3xl max-w-2xl w-full p-8 space-y-6 shadow-2xl relative">
         
         {/* Header Controls */}
-        <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#50007c] text-white flex items-center justify-center font-black">
-              SG
-            </div>
-            <div>
-              <h3 className="text-base font-black text-slate-900">Shivani Graphics Tax Invoice</h3>
-              <p className="text-xs text-slate-500 font-mono">GSTIN: 07AGJPR4456J1ZW · Delhi State Code: 07</p>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-start">
+            <button
+              onClick={onClose}
+              className="px-3.5 py-2 rounded-xl bg-purple-100 text-[#50007c] hover:bg-purple-200 flex items-center gap-1.5 font-black text-xs cursor-pointer shadow-xs"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>← Back</span>
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-[#50007c] text-white flex items-center justify-center font-black text-xs">
+                SG
+              </div>
+              <h3 className="text-sm font-black text-slate-900">Tax Invoice</h3>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
               onClick={handleDownloadPdf}
-              className="px-3.5 py-2 bg-[#50007c] hover:bg-purple-900 text-white font-black text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
+              className="flex-1 sm:flex-none px-4 py-2.5 bg-[#50007c] hover:bg-purple-900 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-md transition-all"
             >
               <Download className="w-4 h-4" /> Download PDF
             </button>
             <button
               onClick={handlePrint}
-              className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 text-[#50007c] font-black text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2.5 bg-purple-50 hover:bg-purple-100 text-[#50007c] font-black text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Printer className="w-4 h-4" /> Print
             </button>
-            <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer font-bold">
-              <X className="w-5 h-5" />
+            <button onClick={onClose} className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl cursor-pointer">
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -143,28 +149,47 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
             </div>
           </div>
 
-          {/* Bank & Signature Section */}
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200 text-[11px] text-slate-600">
+          {/* UPI & Terms Section (Replaced Bank Details) */}
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200 text-[11px] text-slate-600 bg-slate-50/50 p-4 rounded-2xl">
             <div>
-              <p className="font-bold text-slate-900 mb-1">Bank Details for Direct Transfer:</p>
-              <p>Bank Name: HDFC Bank</p>
-              <p>A/C Name: Shivani Graphics</p>
-              <p>A/C No: 50200012345678 | IFSC: HDFC0001234</p>
+              <p className="font-bold text-slate-900 mb-1 flex items-center gap-1.5">
+                <QrCode className="w-4 h-4 text-[#50007c]" /> UPI & Digital Payment
+              </p>
+              <p>UPI ID: <strong className="text-slate-900">shivanigraphics@paytm</strong></p>
+              <p>GPay / PhonePe / Paytm: <strong className="text-slate-900">9810157695</strong></p>
+              <p className="text-[10px] text-emerald-700 font-bold mt-1">✓ Verified Merchant Account</p>
             </div>
-            <div className="text-right flex flex-col justify-end items-end">
-              <div className="h-12 border-b border-dashed border-slate-400 w-36 mb-1"></div>
-              <p className="font-bold text-slate-900">Authorised Signatory</p>
-              <p className="text-[10px] text-slate-400">Shivani Graphics</p>
+            <div className="text-right flex flex-col justify-between">
+              <div>
+                <p className="font-bold text-slate-900 mb-1">Terms & Conditions:</p>
+                <p className="text-[10px] text-slate-500">1. Goods once printed/customized cannot be returned.</p>
+                <p className="text-[10px] text-slate-500">2. Subject to Delhi NCR jurisdiction.</p>
+              </div>
+              <div className="pt-2">
+                <p className="font-bold text-slate-900">For Shivani Graphics</p>
+                <p className="text-[10px] text-slate-400">Authorized Signatory</p>
+              </div>
             </div>
           </div>
 
           <div className="pt-4 border-t border-slate-200 text-[11px] text-slate-500 text-center space-y-0.5">
             <p className="font-bold text-slate-700">Shivani Graphics · Mahavir Enclave, New Delhi 110045 · Phone: +91-9810157695</p>
-            <p>This is a computer-generated tax invoice compliant with GST regulations.</p>
+            <p>Thank you for your business! This is a computer-generated GST tax invoice.</p>
           </div>
+        </div>
+
+        {/* Bottom Close / Back Button */}
+        <div className="flex justify-end pt-2 border-t border-slate-100">
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
+          >
+            Close Invoice
+          </button>
         </div>
 
       </div>
     </div>
   );
 };
+

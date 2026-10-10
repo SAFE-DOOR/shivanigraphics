@@ -34,8 +34,49 @@ interface NavSection {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => {
   const { currentAdminUser, logout, products, invoices } = useAdmin();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [historyStack, setHistoryStack] = useState<string[]>(['dashboard']);
+  const historyRef = React.useRef(historyStack);
+  historyRef.current = historyStack;
+
+  const activeTab = historyStack[historyStack.length - 1];
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const navigateTo = (tabId: string) => {
+    if (tabId === 'dashboard') {
+      setHistoryStack(['dashboard']);
+    } else if (historyStack[historyStack.length - 1] !== tabId) {
+      setHistoryStack(prev => [...prev, tabId]);
+    }
+  };
+
+  const goBack = () => {
+    setHistoryStack(prev => {
+      if (prev.length > 1) {
+        return prev.slice(0, prev.length - 1);
+      }
+      return prev;
+    });
+  };
+
+  // Intercept browser back button within admin panel to prevent exiting the app
+  React.useEffect(() => {
+    window.history.pushState({ adminPanel: true }, '', window.location.href);
+
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault();
+      window.history.pushState({ adminPanel: true }, '', window.location.href);
+      if (historyRef.current.length > 1) {
+        setHistoryStack(prev => prev.length > 1 ? prev.slice(0, prev.length - 1) : prev);
+      } else {
+        onBackToWebsite();
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [onBackToWebsite]);
 
   const navSections: NavSection[] = [
     {
@@ -85,7 +126,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'dashboard': return <DashboardView onNavigateTab={(tab) => setActiveTab(tab)} />;
+      case 'dashboard': return <DashboardView onNavigateTab={(tab) => navigateTo(tab)} />;
       case 'analytics': return <AnalyticsView />;
       case 'database': return <DatabaseView />;
       case 'orders': return <OrdersView />;
@@ -103,7 +144,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
       case 'cms': return <CmsView />;
       case 'users': return <UsersView />;
       case 'audit': return <AuditLogsView />;
-      default: return <DashboardView onNavigateTab={(tab) => setActiveTab(tab)} />;
+      default: return <DashboardView onNavigateTab={(tab) => navigateTo(tab)} />;
     }
   };
 
@@ -115,7 +156,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
         <div className="p-5 border-b border-slate-800 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="h-12 rounded-xl overflow-hidden bg-white flex items-center px-1 shadow-lg">
-              <img src="https://cdn.phototourl.com/member/2026-10-10-415d9842-c350-40b2-b23d-97cdcce5e4a4.jpg" alt="Shivani Graphics" className="h-full w-auto object-contain" />
+              <img src="https://img.sanishtech.com/u/65c843b363e7b4f65c6efab5a16570b4.jpg" alt="Shivani Graphics" className="h-full w-auto object-contain" />
             </div>
             <div className="flex flex-col">
               <span className="font-black text-xs sm:text-sm tracking-tight leading-none">
@@ -133,7 +174,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
               {section.items.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => navigateTo(item.id)}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     activeTab === item.id 
                       ? 'bg-gradient-to-r from-[#50007c] to-purple-800 text-white shadow-lg shadow-purple-950/40' 
@@ -199,7 +240,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
                     {section.items.map((item) => (
                       <button
                         key={item.id}
-                        onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
+                        onClick={() => { navigateTo(item.id); setIsMobileMenuOpen(false); }}
                         className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                           activeTab === item.id ? 'bg-[#50007c] text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                         }`}
