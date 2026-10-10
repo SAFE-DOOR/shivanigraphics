@@ -754,42 +754,35 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
           </button>
         </div>
 
-        {/* 5 Spacious Category Gateway Cards */}
+        {/* 5 Spacious Category Gateway Cards (Photo-less Clean Design) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {officialCategoryPortals.map((portal) => (
             <motion.div
               key={portal.id}
               whileHover={{ y: -4 }}
               onClick={() => handleCategoryNavigate(portal.id)}
-              className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden cursor-pointer hover:shadow-xl hover:border-[#50007c]/40 transition-all duration-300 group flex flex-col justify-between"
+              className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden cursor-pointer hover:shadow-xl hover:border-[#50007c]/40 transition-all duration-300 group flex flex-col justify-between p-6 space-y-4"
             >
-              <div className="relative aspect-16/10 bg-slate-100 overflow-hidden">
-                <img
-                  src={portal.image}
-                  alt={portal.title}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
-                
-                <span className={`absolute top-3 left-3 px-2.5 py-1 text-[10px] font-black rounded-lg shadow-xs uppercase tracking-wider ${portal.tagColor}`}>
-                  {portal.badge}
-                </span>
-
-                <div className="absolute bottom-3 left-3 right-3 text-white">
-                  <h3 className="text-base sm:text-lg font-black tracking-tight leading-snug drop-shadow-sm group-hover:text-orange-300 transition-colors">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1.5 flex-1">
+                  <span className={`inline-block px-2.5 py-1 text-[10px] font-black rounded-lg shadow-xs uppercase tracking-wider ${portal.tagColor}`}>
+                    {portal.badge}
+                  </span>
+                  <h3 className="text-lg font-black tracking-tight text-slate-900 group-hover:text-[#50007c] transition-colors leading-snug">
                     {portal.title}
                   </h3>
                 </div>
+                <div className="w-10 h-10 rounded-2xl bg-purple-50 text-[#50007c] flex items-center justify-center shrink-0 group-hover:bg-[#50007c] group-hover:text-white transition-colors">
+                  <FolderOpen className="w-5 h-5" />
+                </div>
               </div>
 
-              <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+              <div className="space-y-3">
                 <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
                   {portal.subtitle}
                 </p>
 
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-500">
                     {portal.itemCount} Verified Products
                   </span>
