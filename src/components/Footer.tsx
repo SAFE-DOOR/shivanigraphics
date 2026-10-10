@@ -53,14 +53,8 @@ export const Footer: React.FC<FooterProps> = ({
       {/* Brand Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-10 pb-6 text-center space-y-2">
         <div className="flex flex-col items-center">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#50007c] via-purple-700 to-orange-500 flex items-center justify-center text-white font-black text-base shadow-sm">
-              SG
-            </div>
-            <div className="flex items-center font-sans font-black text-2xl sm:text-3xl tracking-tight leading-none">
-              <span className="text-[#50007c]">Shivani</span>
-              <span className="text-orange-500 ml-1.5">Graphics</span>
-            </div>
+          <div className="h-16 sm:h-20 rounded-xl overflow-hidden bg-white flex items-center shadow-sm">
+            <img src="https://cdn.phototourl.com/member/2026-10-10-415d9842-c350-40b2-b23d-97cdcce5e4a4.jpg" alt="Shivani Graphics" className="h-full w-auto object-contain" />
           </div>
           <span className="text-[11px] text-slate-500 font-semibold tracking-wide mt-2">
             One-Stop Digital Printing & Corporate Branding Solutions

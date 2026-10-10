@@ -165,7 +165,7 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
       subtitle: 'Premium commercial printing, visiting cards, flex banners, acrylic glow signs, and custom merchandise',
       badge: '⚡ Live Store Highlight',
       minQty: 'Min. Qty: 1 unit',
-      image: 'https://lh3.googleusercontent.com/d/1whJHiaSll-V9LyXBGCtduKoGrbSNDqC6',
+      image: 'https://img.sanishtech.com/u/f63d7b4e84f436519e1ffe5dbe248245.png',
       gradient: 'from-black/90 via-black/60 to-black/35',
       ctaText: 'Explore Catalog'
     },
@@ -217,7 +217,7 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
       subtitle: 'Sublimation ceramic coffee mugs ready in 10 minutes, bio-washed cotton tees, and rubber stamps',
       badge: '⚡ 10-Minute Express Pickup',
       minQty: 'Min. Qty: 1 piece',
-      image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=80',
+      image: 'https://user43118.na.imgto.link/public/20261010/25d44d334ecb99dd49c515f2-1000046836.avif',
       gradient: 'from-black/90 via-black/60 to-black/35',
       ctaText: 'Explore Mugs & Merch'
     }
@@ -394,28 +394,28 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
-          {/* Background Image with Gradient Overlay */}
+          {/* Background Image with Clean Gradient Overlay */}
           <div className="absolute inset-0">
             <img
               src={activeHero.image}
               alt={activeHero.title}
               className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-1000"
             />
-            <div className={`absolute inset-0 bg-gradient-to-r ${activeHero.gradient}`} />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-slate-950/30 sm:to-transparent" />
           </div>
 
           {/* Top Bar inside Hero */}
           <div className="relative z-10 p-4 sm:p-6 flex items-center justify-between">
-            <span className="px-3 py-1 bg-white/10 backdrop-blur-md text-amber-300 border border-white/20 rounded-full text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5">
-              <span>{activeHero.badge}</span>
+            <span className="px-3 py-1 bg-amber-400 text-slate-950 rounded-full text-xs font-black uppercase tracking-wider shadow-sm">
+              {activeHero.badge}
             </span>
 
             {/* Slider Controls */}
-            <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md p-1 rounded-full border border-white/10">
+            <div className="flex items-center gap-1 bg-black/50 backdrop-blur-md p-1 rounded-full border border-white/10">
               <button
                 type="button"
                 onClick={() => setBannerIndex(prev => (prev - 1 + heroBanners.length) % heroBanners.length)}
-                className="p-1.5 text-white/80 hover:text-white hover:bg-white/20 rounded-full transition-colors cursor-pointer"
+                className="p-1.5 text-white/80 hover:text-white rounded-full transition-colors cursor-pointer"
                 aria-label="Previous Slide"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -423,7 +423,7 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
               <button
                 type="button"
                 onClick={() => setBannerIndex(prev => (prev + 1) % heroBanners.length)}
-                className="p-1.5 text-white/80 hover:text-white hover:bg-white/20 rounded-full transition-colors cursor-pointer"
+                className="p-1.5 text-white/80 hover:text-white rounded-full transition-colors cursor-pointer"
                 aria-label="Next Slide"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -435,52 +435,48 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
           <div className="relative z-10 p-5 sm:p-8 md:p-10 my-auto max-w-2xl text-white pointer-events-auto">
             <div className="space-y-3">
               {activeHero.featureTag && (
-                <span className="inline-block px-3 py-1 bg-amber-400/90 text-slate-950 text-xs sm:text-sm font-black rounded-lg shadow-sm">
+                <span className="inline-block px-3 py-1 bg-blue-600/40 text-blue-200 text-xs sm:text-sm font-bold rounded-lg border border-blue-400/30 backdrop-blur-sm">
                   ⚡ {activeHero.featureTag}
                 </span>
               )}
 
-              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-[1.15] drop-shadow-md">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-[1.15] text-white drop-shadow-md">
                 {activeHero.title}
               </h1>
 
-              <p className="text-xs sm:text-base text-slate-100/95 leading-relaxed font-medium drop-shadow-sm max-w-xl">
+              <p className="text-xs sm:text-base text-slate-200 leading-relaxed font-normal max-w-xl">
                 {activeHero.subtitle}
               </p>
 
               <div className="flex flex-wrap items-center gap-3 pt-2">
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
+                <button
                   type="button"
                   onClick={() => handleCategoryNavigate(activeHero.categoryId)}
-                  className="px-5 py-2.5 sm:px-6 sm:py-3 bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                  className="px-5 py-2.5 sm:px-6 sm:py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <span>{activeHero.ctaText}</span>
                   <ArrowRight className="w-4 h-4" />
-                </motion.button>
+                </button>
 
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
+                <button
                   type="button"
                   onClick={(e) => handleQuickWhatsApp(getProduct(activeHero.productId), e)}
-                  className="px-4 py-2.5 sm:px-5 sm:py-3 bg-emerald-600/90 hover:bg-emerald-600 text-white font-bold text-xs sm:text-sm rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 cursor-pointer shadow-md"
+                  className="px-4 py-2.5 sm:px-5 sm:py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-md"
                 >
-                  <MessageCircle className="w-4 h-4" />
+                  <MessageCircle className="w-4 h-4 fill-white" />
                   <span>WhatsApp Inquiry</span>
-                </motion.button>
+                </button>
               </div>
             </div>
           </div>
 
           {/* Bottom Progress Bar */}
           <div className="relative z-10 w-full p-4 sm:p-6 flex items-center justify-between pointer-events-auto">
-            <span className="text-[11px] text-white/80 font-bold bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
+            <span className="text-xs text-slate-300 font-bold bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
               {activeHero.minQty}
             </span>
 
-            <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+            <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
               {heroBanners.map((_, i) => (
                 <button
                   key={i}

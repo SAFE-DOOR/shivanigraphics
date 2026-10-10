@@ -112,13 +112,17 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
       
       {/* Desktop Vertical Sidebar */}
       <aside className="hidden lg:flex flex-col w-72 bg-slate-900 text-slate-300 border-r border-slate-800 shrink-0">
-        <div className="p-5 border-b border-slate-800 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#50007c] to-orange-500 flex items-center justify-center text-white font-black shadow-lg">
-            SG
-          </div>
-          <div>
-            <h3 className="text-white font-black text-sm tracking-tight">Shivani Graphics</h3>
-            <p className="text-[10px] text-purple-400 uppercase tracking-widest font-bold">Master Admin Studio</p>
+        <div className="p-5 border-b border-slate-800 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="h-12 rounded-xl overflow-hidden bg-white flex items-center px-1 shadow-lg">
+              <img src="https://cdn.phototourl.com/member/2026-10-10-415d9842-c350-40b2-b23d-97cdcce5e4a4.jpg" alt="Shivani Graphics" className="h-full w-auto object-contain" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-black text-xs sm:text-sm tracking-tight leading-none">
+                <span className="text-white">Shivani</span> <span className="text-purple-400">Graphics</span>
+              </span>
+              <span className="text-[9px] text-slate-400 uppercase tracking-widest font-bold mt-0.5">Admin Portal</span>
+            </div>
           </div>
         </div>
 

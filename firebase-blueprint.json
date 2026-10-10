@@ -34,6 +34,18 @@
         "productTitle": { "type": "string", "maxLength": 200 }
       },
       "required": ["id", "customerName"]
+    },
+    "Customer": {
+      "title": "Customer Entity",
+      "description": "CRM customer record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 50 },
+        "email": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["id", "name", "phone"]
     }
   },
   "firestore": {
@@ -48,6 +60,10 @@
     "/quotes/{quoteId}": {
       "schema": "Quote",
       "description": "Customer quote requests"
+    },
+    "/customers/{customerId}": {
+      "schema": "Customer",
+      "description": "Customer database records"
     }
   }
 }

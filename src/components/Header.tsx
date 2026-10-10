@@ -21,7 +21,6 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { ProductItem } from '../types';
 import { CATEGORIES } from '../data/products';
-import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
   products: ProductItem[];
@@ -108,23 +107,22 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Center-Left: Shivani Graphics Brand Logo */}
+          {/* Center-Left: Shivani Graphics Brand Logo & Two-Color Text */}
           <div className="flex items-center">
             <button 
               type="button"
               onClick={onNavigateHome}
-              className="flex items-center gap-2 sm:gap-2.5 group cursor-pointer text-left"
+              className="flex items-center gap-2.5 sm:gap-3 group cursor-pointer text-left"
             >
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-[#50007c] via-purple-700 to-orange-500 flex items-center justify-center text-white font-black text-xs sm:text-sm shadow-xs group-hover:scale-105 transition-transform">
-                SG
+              <div className="h-11 sm:h-14 rounded-lg overflow-hidden bg-white flex items-center shadow-xs group-hover:scale-105 transition-transform">
+                <img src="https://cdn.phototourl.com/member/2026-10-10-415d9842-c350-40b2-b23d-97cdcce5e4a4.jpg" alt="Shivani Graphics" className="h-full w-auto object-contain" />
               </div>
               <div className="flex flex-col">
-                <div className="flex items-center font-sans font-black text-xl sm:text-2xl tracking-tight leading-none">
-                  <span className="text-[#50007c]">Shivani</span>
-                  <span className="text-orange-500 ml-1">Graphics</span>
-                </div>
-                <span className="text-[9px] sm:text-[10px] text-slate-500 font-semibold tracking-tight -mt-0.5 group-hover:text-orange-600 transition-colors">
-                  Digital Prints & Signages
+                <span className="font-black text-sm sm:text-lg tracking-tight leading-none">
+                  <span className="text-slate-900">Shivani</span> <span className="text-[#50007c]">Graphics</span>
+                </span>
+                <span className="text-[10px] text-slate-500 font-medium tracking-wider uppercase mt-0.5">
+                  Print & Signage Studio
                 </span>
               </div>
             </button>
@@ -235,9 +233,6 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Search className="w-5 h-5 stroke-[2.2]" />
             </button>
-
-            {/* Theme Toggle Button */}
-            <ThemeToggle />
 
             {/* Shopping Cart Icon with Purple/Indigo Badge */}
             <button

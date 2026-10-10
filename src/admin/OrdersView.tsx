@@ -19,11 +19,28 @@ export const OrdersView: React.FC = () => {
     productTitle: 'Visiting Cards (350 GSM Art Card)',
     quantity: 100,
     options: 'Matte Lamination · Both Sides',
-    totalAmount: 499,
+    totalAmount: 588.82,
     status: 'New',
     paymentStatus: 'Paid',
     date: new Date().toISOString().split('T')[0]
   });
+
+  const [unitPrice, setUnitPrice] = useState<number>(4.99);
+
+  const handleQuantityChange = (qty: number) => {
+    const sub = qty * unitPrice;
+    const gst = sub * 0.18;
+    const total = Math.round((sub + gst) * 100) / 100;
+    setNewOrder({ ...newOrder, quantity: qty, totalAmount: total });
+  };
+
+  const handleUnitPriceChange = (price: number) => {
+    setUnitPrice(price);
+    const sub = newOrder.quantity * price;
+    const gst = sub * 0.18;
+    const total = Math.round((sub + gst) * 100) / 100;
+    setNewOrder({ ...newOrder, totalAmount: total });
+  };
 
   const filtered = filterStatus === 'All' ? orders : orders.filter(o => o.status === filterStatus);
 
@@ -238,20 +255,23 @@ export const OrdersView: React.FC = () => {
                   <label className="font-bold text-slate-700 block mb-1">Quantity</label>
                   <input
                     type="number"
+                    min={1}
                     value={newOrder.quantity}
-                    onChange={(e) => setNewOrder({ ...newOrder, quantity: Number(e.target.value) })}
+                    onChange={(e) => handleQuantityChange(Number(e.target.value))}
                     required
                     className="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-medium"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Total Amount (₹)</label>
+                  <label className="font-bold text-slate-700 block mb-1">Unit Price (₹)</label>
                   <input
                     type="number"
-                    value={newOrder.totalAmount}
-                    onChange={(e) => setNewOrder({ ...newOrder, totalAmount: Number(e.target.value) })}
+                    step="0.01"
+                    min={0}
+                    value={unitPrice}
+                    onChange={(e) => handleUnitPriceChange(Number(e.target.value))}
                     required
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-medium font-bold text-emerald-600"
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-medium"
                   />
                 </div>
                 <div>
@@ -265,6 +285,22 @@ export const OrdersView: React.FC = () => {
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              {/* Auto Calculator Summary Box */}
+              <div className="p-3 bg-purple-50/70 rounded-xl border border-purple-200 text-xs space-y-1">
+                <div className="flex justify-between text-slate-600">
+                  <span>Subtotal ({newOrder.quantity} × ₹{unitPrice}):</span>
+                  <span className="font-semibold text-slate-900">₹{(newOrder.quantity * unitPrice).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>GST (18%):</span>
+                  <span className="font-semibold text-slate-900">₹{((newOrder.quantity * unitPrice) * 0.18).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-slate-900 font-black pt-1 border-t border-purple-200 text-sm">
+                  <span>Auto-Calculated Total (₹):</span>
+                  <span className="text-[#50007c]">₹{newOrder.totalAmount.toFixed(2)}</span>
                 </div>
               </div>
 

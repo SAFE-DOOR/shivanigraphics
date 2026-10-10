@@ -1,4 +1,5 @@
 import React from 'react';
+import facilityImg from '../assets/images/regenerated_image_1791621825710.png';
 import { 
   Printer, 
   MapPin, 
@@ -72,7 +73,7 @@ export const AboutUsPage: React.FC<AboutUsPageProps> = ({ onBackToHome, onExplor
         <div className="space-y-3">
           <div className="relative rounded-3xl overflow-hidden shadow-2xl aspect-16/9 max-h-[480px] border-2 border-purple-200 bg-slate-900">
             <img 
-              src="https://plain-apac-prod-public.komododecks.com/202610/10/gw7e2RHm9Po8Lape78vz/image.png" 
+              src={facilityImg} 
               alt="Shivani Graphics Store & Facility"
               className="w-full h-full object-cover"
             />

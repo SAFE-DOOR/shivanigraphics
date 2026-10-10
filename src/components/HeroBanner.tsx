@@ -129,14 +129,17 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
 
                 {/* 2 Featured Preview Badges */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-700/60">
-                    <img 
-                      src="https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&w=400&q=80" 
-                      alt="Cards" 
-                      className="w-full h-24 object-cover rounded-lg mb-2"
-                    />
-                    <p className="text-xs font-bold text-white">Visiting Cards</p>
-                    <p className="text-[11px] text-slate-400">From ₹0.78 / card</p>
+                  <div className="bg-slate-900/90 p-3 rounded-xl border border-purple-500/40 shadow-lg shadow-purple-900/20 group/imgcard">
+                    <div className="relative overflow-hidden rounded-lg mb-2">
+                      <img 
+                        src="https://img.sanishtech.com/u/f63d7b4e84f436519e1ffe5dbe248245.png" 
+                        alt="Shivani Graphics · Custom Print & Signage" 
+                        className="w-full h-24 object-cover rounded-lg group-hover/imgcard:scale-110 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover/imgcard:opacity-100 transition-opacity" />
+                    </div>
+                    <p className="text-xs font-bold text-white">Shivani Graphics · Custom Print & Signage</p>
+                    <p className="text-[11px] text-slate-400">Industrial 1200 DPI Press</p>
                   </div>
 
                   <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-700/60">

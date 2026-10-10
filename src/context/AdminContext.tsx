@@ -102,6 +102,15 @@ export interface InvoiceRecord {
   date: string;
 }
 
+export interface AdminCustomer {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  createdAt?: string;
+}
+
 interface AdminContextType {
   isAdminLoggedIn: boolean;
   currentAdminUser: AdminUser | null;
@@ -118,6 +127,9 @@ interface AdminContextType {
   invoices: InvoiceRecord[];
   saveInvoice: (invoice: InvoiceRecord) => Promise<void>;
   deleteInvoice: (id: string) => Promise<void>;
+  customers: AdminCustomer[];
+  saveCustomer: (customer: AdminCustomer) => Promise<void>;
+  deleteCustomer: (id: string) => Promise<void>;
   quotes: AdminQuote[];
   updateQuoteStatus: (id: string, status: AdminQuote['status'], price?: number) => Promise<void>;
   deleteQuote: (id: string) => Promise<void>;
@@ -160,6 +172,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [products, setProducts] = useState<ProductItem[]>(PRODUCTS);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
+  const [customers, setCustomers] = useState<AdminCustomer[]>([]);
   const [quotes, setQuotes] = useState<AdminQuote[]>([]);
   const [websiteImages, setWebsiteImages] = useState<WebsiteImage[]>([
     { id: 'img-1', title: 'Homepage Hero Main', section: 'Hero', url: 'https://images.unsplash.com/photo-1593062096033-9a26b09da705?auto=format&fit=crop&w=1200&q=80', alt: 'Visiting Cards', enabled: true, sortOrder: 1 },
@@ -246,6 +259,14 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setInvoices(items);
     }, (error) => {
       handleFirestoreError(error, OperationType.GET, 'invoices');
+    });
+
+    // 4b. Customers Listener
+    const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => {
+      const items = snapshot.docs.map(doc => doc.data() as AdminCustomer);
+      setCustomers(items);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'customers');
     });
 
     // 5. Quotes Listener
@@ -343,6 +364,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       unsubBanners();
       unsubOrders();
       unsubInvoices();
+      unsubCustomers();
       unsubQuotes();
       unsubReviews();
       unsubCoupons();
@@ -450,6 +472,24 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       logAction(`Saved invoice: ${invoice.id}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
       handleFirestoreError(e, OperationType.WRITE, `invoices/${invoice.id}`);
+    }
+  };
+
+  const saveCustomer = async (customer: AdminCustomer) => {
+    try {
+      await setDoc(doc(db, 'customers', customer.id), customer, { merge: true });
+      logAction(`Saved customer: ${customer.name}`, currentAdminUser?.name || 'Admin');
+    } catch (e) {
+      handleFirestoreError(e, OperationType.WRITE, `customers/${customer.id}`);
+    }
+  };
+
+  const deleteCustomer = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'customers', id));
+      logAction(`Deleted customer ID: ${id}`, currentAdminUser?.name || 'Admin');
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, `customers/${id}`);
     }
   };
 
@@ -591,6 +631,9 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       invoices,
       saveInvoice,
       deleteInvoice,
+      customers,
+      saveCustomer,
+      deleteCustomer,
       quotes,
       updateQuoteStatus,
       deleteQuote,

@@ -83,8 +83,8 @@ export const FloatingWhatsApp: React.FC = () => {
             <div className="p-4 bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-700 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center border border-white/30 font-bold text-white text-xs">
-                    SG
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-white border border-white/30 flex items-center justify-center shrink-0">
+                    <img src="https://cdn.phototourl.com/member/2026-10-10-415d9842-c350-40b2-b23d-97cdcce5e4a4.jpg" alt="Logo" className="w-full h-full object-cover" />
                   </div>
                   <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-300 border-2 border-emerald-700 rounded-full" />
                 </div>
@@ -125,8 +125,8 @@ export const FloatingWhatsApp: React.FC = () => {
               
               {/* Agent Welcome Message */}
               <div className="flex items-start gap-2 max-w-[88%]">
-                <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 text-[10px] font-bold shadow-xs">
-                  SG
+                <div className="w-7 h-7 rounded-full overflow-hidden bg-white shadow-xs shrink-0 flex items-center justify-center border border-emerald-200">
+                  <img src="https://cdn.phototourl.com/member/2026-10-10-415d9842-c350-40b2-b23d-97cdcce5e4a4.jpg" alt="Logo" className="w-full h-full object-cover" />
                 </div>
                 <div className="bg-white p-3 rounded-2xl rounded-tl-xs shadow-xs border border-slate-200/80 space-y-1">
                   <p className="font-semibold text-slate-800 leading-relaxed">
@@ -153,8 +153,8 @@ export const FloatingWhatsApp: React.FC = () => {
                     transition={{ duration: 0.2 }}
                     className="flex items-center gap-2"
                   >
-                    <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 text-[10px] font-bold shadow-xs">
-                      SG
+                    <div className="w-7 h-7 rounded-full overflow-hidden bg-white shadow-xs shrink-0 flex items-center justify-center border border-emerald-200">
+                      <img src="https://cdn.phototourl.com/member/2026-10-10-415d9842-c350-40b2-b23d-97cdcce5e4a4.jpg" alt="Logo" className="w-full h-full object-cover" />
                     </div>
                     <div className="bg-white px-3.5 py-2.5 rounded-2xl rounded-tl-xs shadow-xs border border-slate-200/80 flex items-center gap-2">
                       <span className="text-[11px] font-semibold text-slate-600">

@@ -13,8 +13,6 @@ import { TrackOrderPage } from './components/TrackOrderPage';
 import { HelpCenter } from './components/HelpCenter';
 import { Footer, PolicyRoute } from './components/Footer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
-import { PrepressAiAdvisorModal } from './components/PrepressAiAdvisorModal';
-import { GeminiChatWidget } from './components/GeminiChatWidget';
 import { CartModal } from './components/CartModal';
 import { BulkQuoteModal } from './components/BulkQuoteModal';
 import { playWelcomeVoiceGreeting, hasBeenGreeted, isVoiceMuted } from './utils/voiceGreeting';
@@ -34,7 +32,6 @@ import { MasterAdminPanel } from './components/MasterAdminPanel';
 
 // Admin Studio & Context System
 import { AdminProvider, useAdmin } from './context/AdminContext';
-import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { AdminLogin } from './admin/AdminLogin';
 import { AdminLayout } from './admin/AdminLayout';
@@ -391,10 +388,8 @@ function AppContent() {
         onOpenAdminModal={() => navigateTo('admin')}
       />
 
-      {/* 6. Round Green Floating WhatsApp Button & Prepress AI Advisor */}
+      {/* 6. Round Green Floating WhatsApp Button */}
       <FloatingWhatsApp />
-      <PrepressAiAdvisorModal />
-      <GeminiChatWidget />
 
       {/* 7. Non-Disruptive Functional Utilities */}
       <CartModal
@@ -422,12 +417,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AdminProvider>
-        <ToastProvider>
-          <AppContent />
-        </ToastProvider>
-      </AdminProvider>
-    </ThemeProvider>
+    <AdminProvider>
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
+    </AdminProvider>
   );
 }

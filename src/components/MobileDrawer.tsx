@@ -139,12 +139,16 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             {/* Drawer Header Close */}
             <div className="p-4 bg-[#50007c] text-white flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center text-white font-black text-xs shadow-xs">
-                  SG
+                <div className="h-12 rounded-lg overflow-hidden bg-white flex items-center px-1 shadow-xs">
+                  <img src="https://cdn.phototourl.com/member/2026-10-10-415d9842-c350-40b2-b23d-97cdcce5e4a4.jpg" alt="Shivani Graphics" className="h-full w-auto object-contain" />
                 </div>
-                <div className="flex items-center font-sans font-black text-xl tracking-tight leading-none">
-                  <span className="text-white">Shivani</span>
-                  <span className="text-orange-400 ml-1">Graphics</span>
+                <div className="flex flex-col">
+                  <span className="font-black text-sm tracking-tight leading-none">
+                    <span className="text-white">Shivani</span> <span className="text-amber-300">Graphics</span>
+                  </span>
+                  <span className="text-[10px] text-purple-200 mt-0.5">
+                    Print & Signage
+                  </span>
                 </div>
               </div>
               <button
