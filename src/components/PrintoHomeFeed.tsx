@@ -59,6 +59,7 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
 
   // Firestore Reviews State
   const [firestoreReviews, setFirestoreReviews] = useState<any[]>([]);
+  const approvedReviews = firestoreReviews.filter(r => r.approved !== false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [newReviewName, setNewReviewName] = useState('');
   const [newReviewPhone, setNewReviewPhone] = useState('');
@@ -834,14 +835,14 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
           </div>
 
           {/* Customer Printed Photos Gallery */}
-          {firestoreReviews.some(r => r.imageUrl) && (
+          {approvedReviews.some(r => r.imageUrl) && (
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
               <div className="flex items-center gap-2">
                 <Camera className="w-4 h-4 text-[#50007c]" />
-                <h5 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider">Customer Printed Photos Gallery ({firestoreReviews.filter(r => r.imageUrl).length})</h5>
+                <h5 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider">Customer Printed Photos Gallery ({approvedReviews.filter(r => r.imageUrl).length})</h5>
               </div>
               <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
-                {firestoreReviews.filter(r => r.imageUrl).map((rev, idx) => (
+                {approvedReviews.filter(r => r.imageUrl).map((rev, idx) => (
                   <div key={idx} className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden border border-slate-200 shrink-0 bg-slate-50 group shadow-2xs">
                     <img src={rev.imageUrl} alt={rev.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                     <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-white text-[10px] truncate font-medium">
@@ -857,24 +858,24 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-700">
-                Showing Verified Reviews from <span className="text-[#50007c] font-black">{firestoreReviews.length}</span> Customers ({firestoreReviews.length} people reviewed)
+                Showing Verified Reviews from <span className="text-[#50007c] font-black">{approvedReviews.length}</span> Customers ({approvedReviews.length} people reviewed)
               </span>
-              {firestoreReviews.length > 1 && (
+              {approvedReviews.length > 1 && (
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setReviewSlideIndex(prev => (prev === 0 ? firestoreReviews.length - 1 : prev - 1))}
+                    onClick={() => setReviewSlideIndex(prev => (prev === 0 ? approvedReviews.length - 1 : prev - 1))}
                     className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-2xs transition-colors cursor-pointer"
                     aria-label="Previous Review"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <span className="text-xs font-bold text-slate-600">
-                    {reviewSlideIndex + 1} / {firestoreReviews.length}
+                    {reviewSlideIndex + 1} / {approvedReviews.length}
                   </span>
                   <button
                     type="button"
-                    onClick={() => setReviewSlideIndex(prev => (prev === firestoreReviews.length - 1 ? 0 : prev + 1))}
+                    onClick={() => setReviewSlideIndex(prev => (prev === approvedReviews.length - 1 ? 0 : prev + 1))}
                     className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-2xs transition-colors cursor-pointer"
                     aria-label="Next Review"
                   >
@@ -884,7 +885,7 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
               )}
             </div>
 
-            {firestoreReviews.length === 0 ? (
+            {approvedReviews.length === 0 ? (
               <div className="text-center py-10 bg-white rounded-2xl border border-slate-200 p-6">
                 <Star className="w-8 h-8 text-amber-400 fill-amber-100 mx-auto mb-2" />
                 <p className="font-bold text-slate-800 text-sm">No reviews yet</p>
@@ -894,7 +895,7 @@ export const PrintoHomeFeed: React.FC<PrintoHomeFeedProps> = ({
               <div className="relative overflow-hidden">
                 <AnimatePresence mode="wait">
                   {(() => {
-                    const currentReview = firestoreReviews[reviewSlideIndex % firestoreReviews.length];
+                    const currentReview = approvedReviews[reviewSlideIndex % approvedReviews.length];
                     if (!currentReview) return null;
                     return (
                       <motion.div

@@ -229,9 +229,9 @@ export const PRODUCTS: ProductItem[] = [
     badge: 'Store Bestseller',
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1593062096033-9a26b09da705?auto=format&fit=crop&w=1200&q=80',
-        alt: 'Executive visiting cards luxury mockup',
-        caption: 'Luxury Matte Finish with Spot UV Logo Detailing'
+        url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1200&q=80',
+        alt: 'Visiting cards and executive letterhead printing mockup',
+        caption: 'Professional Executive Visiting Cards & Corporate Letterhead Set'
       }
     ],
     specs: [

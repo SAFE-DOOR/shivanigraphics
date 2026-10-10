@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { PRODUCTS, CATEGORIES } from '../data/products';
 import { ProductItem } from '../types';
+import { db, handleFirestoreError, OperationType } from '../firebase';
+import { collection, doc, onSnapshot, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 
 export interface AdminUser {
   email: string;
@@ -152,7 +154,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
   const [quotes, setQuotes] = useState<AdminQuote[]>([]);
-  const [websiteImages, setWebsiteImages] = useState<WebsiteImage[]>([]);
+  const [websiteImages, setWebsiteImages] = useState<WebsiteImage[]>([
+    { id: 'img-1', title: 'Homepage Hero Main', section: 'Hero', url: 'https://images.unsplash.com/photo-1593062096033-9a26b09da705?auto=format&fit=crop&w=1200&q=80', alt: 'Visiting Cards', enabled: true, sortOrder: 1 },
+    { id: 'img-2', title: 'Outdoor Flex Banner', section: 'Hero', url: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1200&q=80', alt: 'Flex Banners', enabled: true, sortOrder: 2 }
+  ]);
   const [websiteContent, setWebsiteContent] = useState({
     heroHeading: 'Shivani Graphics · Printo-Style Commercial Printing',
     heroSubtitle: 'Premium digital printing, visiting cards, flex banners, 3D acrylic LED boards & corporate merch in Delhi NCR.',
@@ -168,39 +173,117 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     { id: 'inv-2', item: 'Star Flex Vinyl Roll 340 GSM', sku: 'FLEX-340GSM', currentStock: 12, minStock: 3, unit: 'Rolls' },
     { id: 'inv-3', item: 'Matte Lamination Roll', sku: 'LAM-MATTE', currentStock: 8, minStock: 2, unit: 'Rolls' }
   ]);
-  const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [reviews, setReviews] = useState<ReviewItem[]>([
+    { id: 'rev-1', name: 'Rohan Sharma', rating: 5, review: 'Amazing quality visiting cards ready in just 5 minutes at Mahavir Enclave store!', date: '2026-10-06', approved: true },
+    { id: 'rev-2', name: 'Neha Gupta', rating: 5, review: 'Best flex banner printing in Delhi NCR. Very prompt service.', date: '2026-10-07', approved: true }
+  ]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([
-    { id: 'log-1', admin: 'Ranjan Roy', action: 'Master Admin Studio Initialized (Local Express DB)', date: '2026-10-07', time: '19:10' }
+    { id: 'log-1', admin: 'Ranjan Roy', action: 'Master Admin Studio Initialized (Firestore Realtime Sync)', date: '2026-10-07', time: '19:10' }
   ]);
 
   const [isFirebaseLoading, setIsFirebaseLoading] = useState(true);
 
-  // Fetch initial data from local Express DB API
+  // Real-time Firestore onSnapshot listeners
   useEffect(() => {
-    async function loadData() {
-      try {
-        const res = await fetch('/api/db');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.products && data.products.length > 0) setProducts(data.products);
-          if (data.orders) setOrders(data.orders);
-          if (data.invoices) setInvoices(data.invoices);
-          if (data.quotes) setQuotes(data.quotes);
-          if (data.reviews) setReviews(data.reviews);
-          if (data.images) setWebsiteImages(data.images);
-          if (data.content) setWebsiteContent(data.content);
-        }
-      } catch (e) {
-        console.warn('Error loading local DB:', e);
-      } finally {
-        setIsFirebaseLoading(false);
+    // 1. Products Listener
+    const unsubProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
+      if (!snapshot.empty) {
+        const items = snapshot.docs.map(doc => doc.data() as ProductItem);
+        setProducts(items);
+      } else {
+        // Seed default products
+        PRODUCTS.forEach(async (p) => {
+          try {
+            await setDoc(doc(db, 'products', p.id), p);
+          } catch (err) {
+            console.error('Error seeding product:', err);
+          }
+        });
+        setProducts(PRODUCTS);
       }
-    }
-    loadData();
+      setIsFirebaseLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'products');
+    });
 
-    // Poll for updates every 3 seconds for seamless cross-tab sync
-    const interval = setInterval(loadData, 3000);
-    return () => clearInterval(interval);
+    // 2. Banners / Website Images Listener
+    const unsubBanners = onSnapshot(collection(db, 'banners'), (snapshot) => {
+      if (!snapshot.empty) {
+        const items = snapshot.docs.map(doc => doc.data() as WebsiteImage);
+        setWebsiteImages(items);
+      } else {
+        const defaultBanners = [
+          { id: 'img-1', title: 'Homepage Hero Main', section: 'Hero', url: 'https://images.unsplash.com/photo-1593062096033-9a26b09da705?auto=format&fit=crop&w=1200&q=80', alt: 'Visiting Cards', enabled: true, sortOrder: 1 },
+          { id: 'img-2', title: 'Outdoor Flex Banner', section: 'Hero', url: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1200&q=80', alt: 'Flex Banners', enabled: true, sortOrder: 2 }
+        ];
+        defaultBanners.forEach(async (b) => {
+          try {
+            await setDoc(doc(db, 'banners', b.id), b);
+          } catch (err) {
+            console.error('Error seeding banner:', err);
+          }
+        });
+        setWebsiteImages(defaultBanners);
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'banners');
+    });
+
+    // 3. Orders Listener
+    const unsubOrders = onSnapshot(collection(db, 'orders'), (snapshot) => {
+      const items = snapshot.docs.map(doc => doc.data() as AdminOrder);
+      setOrders(items);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'orders');
+    });
+
+    // 4. Invoices Listener
+    const unsubInvoices = onSnapshot(collection(db, 'invoices'), (snapshot) => {
+      const items = snapshot.docs.map(doc => doc.data() as InvoiceRecord);
+      setInvoices(items);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'invoices');
+    });
+
+    // 5. Quotes Listener
+    const unsubQuotes = onSnapshot(collection(db, 'quotes'), (snapshot) => {
+      const items = snapshot.docs.map(doc => doc.data() as AdminQuote);
+      setQuotes(items);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'quotes');
+    });
+
+    // 6. Reviews Listener
+    const unsubReviews = onSnapshot(collection(db, 'reviews'), (snapshot) => {
+      if (!snapshot.empty) {
+        const items = snapshot.docs.map(doc => doc.data() as ReviewItem);
+        setReviews(items);
+      } else {
+        const defaultReviews = [
+          { id: 'rev-1', name: 'Rohan Sharma', rating: 5, review: 'Amazing quality visiting cards ready in just 5 minutes at Mahavir Enclave store!', date: '2026-10-06', approved: true },
+          { id: 'rev-2', name: 'Neha Gupta', rating: 5, review: 'Best flex banner printing in Delhi NCR. Very prompt service.', date: '2026-10-07', approved: true }
+        ];
+        defaultReviews.forEach(async (r) => {
+          try {
+            await setDoc(doc(db, 'reviews', r.id), r);
+          } catch (err) {
+            console.error('Error seeding review:', err);
+          }
+        });
+        setReviews(defaultReviews);
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'reviews');
+    });
+
+    return () => {
+      unsubProducts();
+      unsubBanners();
+      unsubOrders();
+      unsubInvoices();
+      unsubQuotes();
+      unsubReviews();
+    };
   }, []);
 
   const login = (user: AdminUser) => {
@@ -229,158 +312,102 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateProduct = async (updatedProd: ProductItem) => {
     try {
-      await fetch(`/api/products/${updatedProd.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedProd)
-      });
-      setProducts(prev => prev.map(p => p.id === updatedProd.id ? updatedProd : p));
+      await setDoc(doc(db, 'products', updatedProd.id), updatedProd, { merge: true });
       logAction(`Updated product: ${updatedProd.title}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
-      console.error('API sync error:', e);
+      handleFirestoreError(e, OperationType.UPDATE, `products/${updatedProd.id}`);
     }
   };
 
   const addProduct = async (newProd: ProductItem) => {
     try {
-      await fetch(`/api/products/${newProd.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newProd)
-      });
-      setProducts(prev => [newProd, ...prev]);
+      await setDoc(doc(db, 'products', newProd.id), newProd);
       logAction(`Added new product: ${newProd.title}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
-      console.error('API sync error:', e);
+      handleFirestoreError(e, OperationType.CREATE, `products/${newProd.id}`);
     }
   };
 
   const deleteProduct = async (id: string) => {
     const p = products.find(x => x.id === id);
     try {
-      await fetch(`/api/products/${id}`, {
-        method: 'DELETE'
-      });
-      setProducts(prev => prev.filter(x => x.id !== id));
+      await deleteDoc(doc(db, 'products', id));
       logAction(`Deleted product: ${p?.title || id}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
-      console.error('API sync error:', e);
+      handleFirestoreError(e, OperationType.DELETE, `products/${id}`);
     }
   };
 
   const updateOrderStatus = async (id: string, status: AdminOrder['status']) => {
     try {
-      const order = orders.find(o => o.id === id);
-      if (order) {
-        const updated = { ...order, status };
-        await fetch(`/api/orders/${id}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updated)
-        });
-        setOrders(prev => prev.map(o => o.id === id ? updated : o));
-      }
+      await updateDoc(doc(db, 'orders', id), { status });
       logAction(`Updated order ${id} status to ${status}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
-      console.error('API sync error:', e);
+      handleFirestoreError(e, OperationType.UPDATE, `orders/${id}`);
     }
   };
 
   const saveInvoice = async (invoice: InvoiceRecord) => {
     try {
-      await fetch(`/api/invoices/${invoice.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(invoice)
-      });
-      setInvoices(prev => [invoice, ...prev.filter(i => i.id !== invoice.id)]);
+      await setDoc(doc(db, 'invoices', invoice.id), invoice, { merge: true });
       logAction(`Saved invoice: ${invoice.id}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
-      console.error('API sync error:', e);
+      handleFirestoreError(e, OperationType.WRITE, `invoices/${invoice.id}`);
     }
   };
 
   const deleteInvoice = async (id: string) => {
     try {
-      await fetch(`/api/invoices/${id}`, {
-        method: 'DELETE'
-      });
-      setInvoices(prev => prev.filter(i => i.id !== id));
+      await deleteDoc(doc(db, 'invoices', id));
       logAction(`Deleted invoice: ${id}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
-      console.error('API sync error:', e);
+      handleFirestoreError(e, OperationType.DELETE, `invoices/${id}`);
     }
   };
 
   const updateQuoteStatus = async (id: string, status: AdminQuote['status'], price?: number) => {
     try {
-      const quote = quotes.find(q => q.id === id);
-      if (quote) {
-        const updated = { ...quote, status, quotedPrice: price };
-        await fetch(`/api/quotes/${id}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updated)
-        });
-        setQuotes(prev => prev.map(q => q.id === id ? updated : q));
-      }
+      await updateDoc(doc(db, 'quotes', id), { status, quotedPrice: price });
       logAction(`Updated quote ${id} status to ${status}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
-      console.error('API sync error:', e);
+      handleFirestoreError(e, OperationType.UPDATE, `quotes/${id}`);
     }
   };
 
   const updateWebsiteImage = async (img: WebsiteImage) => {
     try {
-      await fetch(`/api/images/${img.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(img)
-      });
-      setWebsiteImages(prev => prev.map(i => i.id === img.id ? img : i));
-      logAction(`Updated website image: ${img.title}`, currentAdminUser?.name || 'Admin');
+      await setDoc(doc(db, 'banners', img.id), img, { merge: true });
+      logAction(`Updated website image/banner: ${img.title}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
-      console.error('API sync error:', e);
+      handleFirestoreError(e, OperationType.UPDATE, `banners/${img.id}`);
     }
   };
 
   const addWebsiteImage = async (img: WebsiteImage) => {
     try {
-      await fetch(`/api/images/${img.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(img)
-      });
-      setWebsiteImages(prev => [...prev, img]);
-      logAction(`Added website image: ${img.title}`, currentAdminUser?.name || 'Admin');
+      await setDoc(doc(db, 'banners', img.id), img);
+      logAction(`Added website image/banner: ${img.title}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
-      console.error('API sync error:', e);
+      handleFirestoreError(e, OperationType.CREATE, `banners/${img.id}`);
     }
   };
 
   const deleteWebsiteImage = async (id: string) => {
     try {
-      await fetch(`/api/images/${id}`, {
-        method: 'DELETE'
-      });
-      setWebsiteImages(prev => prev.filter(i => i.id !== id));
-      logAction(`Deleted website image ID: ${id}`, currentAdminUser?.name || 'Admin');
+      await deleteDoc(doc(db, 'banners', id));
+      logAction(`Deleted website image/banner ID: ${id}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
-      console.error('API sync error:', e);
+      handleFirestoreError(e, OperationType.DELETE, `banners/${id}`);
     }
   };
 
   const updateWebsiteContent = async (content: any) => {
     try {
-      await fetch(`/api/content`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(content)
-      });
+      await setDoc(doc(db, 'content', 'site_content'), content, { merge: true });
       setWebsiteContent(content);
       logAction(`Updated website CMS content`, currentAdminUser?.name || 'Admin');
     } catch (e) {
-      console.error('API sync error:', e);
+      handleFirestoreError(e, OperationType.UPDATE, 'content/site_content');
     }
   };
 
@@ -400,17 +427,11 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const rev = reviews.find(r => r.id === id);
     if (!rev) return;
     const newStatus = !rev.approved;
-    const updatedReviews = reviews.map(r => r.id === id ? { ...r, approved: newStatus } : r);
-    setReviews(updatedReviews);
     try {
-      await fetch(`/api/reviews/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...rev, approved: newStatus })
-      });
-      logAction(`Toggled review approval for ID ${id}`, currentAdminUser?.name || 'Admin');
+      await updateDoc(doc(db, 'reviews', id), { approved: newStatus });
+      logAction(`Toggled review approval for ID ${id} to ${newStatus}`, currentAdminUser?.name || 'Admin');
     } catch (e) {
-      console.error('API sync error:', e);
+      handleFirestoreError(e, OperationType.UPDATE, `reviews/${id}`);
     }
   };
 
@@ -425,14 +446,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       photo: review.photo
     };
     try {
-      await fetch(`/api/reviews/${newRev.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newRev)
-      });
-      setReviews(prev => [newRev, ...prev]);
+      await setDoc(doc(db, 'reviews', newRev.id), newRev);
+      logAction(`Added public review by ${review.name}`, 'Customer');
     } catch (e) {
-      console.error('Error adding public review:', e);
+      handleFirestoreError(e, OperationType.CREATE, `reviews/${newRev.id}`);
     }
   };
 

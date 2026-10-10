@@ -21,6 +21,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { ProductItem } from '../types';
 import { CATEGORIES } from '../data/products';
+import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
   products: ProductItem[];
@@ -234,6 +235,9 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Search className="w-5 h-5 stroke-[2.2]" />
             </button>
+
+            {/* Theme Toggle Button */}
+            <ThemeToggle />
 
             {/* Shopping Cart Icon with Purple/Indigo Badge */}
             <button

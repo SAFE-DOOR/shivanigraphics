@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Briefcase, MessageCircle, ArrowRight, ShieldCheck, Check } from 'lucide-react';
 import { WHATSAPP_PRIMARY } from '../utils/whatsapp';
+import { useToast } from '../context/ToastContext';
 
 interface BulkQuoteModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface BulkQuoteModalProps {
 }
 
 export const BulkQuoteModal: React.FC<BulkQuoteModalProps> = ({ isOpen, onClose }) => {
+  const { showToast } = useToast();
   const [companyName, setCompanyName] = useState('');
   const [contactPerson, setContactPerson] = useState('');
   const [productType, setProductType] = useState('Visiting Cards & Corporate Stationery');
@@ -34,6 +36,7 @@ export const BulkQuoteModal: React.FC<BulkQuoteModalProps> = ({ isOpen, onClose 
       `Please provide corporate ratecard, sample kit dispatch, and volume rebates.`
     ].filter(Boolean).join('\n');
 
+    showToast('Bulk quote inquiry submitted successfully! Opening WhatsApp...', 'success');
     window.open(`https://wa.me/${WHATSAPP_PRIMARY}?text=${encodeURIComponent(message)}`, '_blank');
     onClose();
   };
