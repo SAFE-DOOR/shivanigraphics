@@ -18,7 +18,7 @@ interface MasterAdminPanelProps {
 }
 
 export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'products' | 'banners' | 'categories' | 'reviews' | 'inquiries' | 'images'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'products' | 'banners' | 'categories' | 'reviews' | 'inquiries' | 'images' | 'customers'>('dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
@@ -32,6 +32,7 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
   const [dbReviews, setDbReviews] = useState<any[]>([]);
   const [dbInquiries, setDbInquiries] = useState<any[]>([]);
   const [dbImages, setDbImages] = useState<any[]>([]);
+  const [dbCustomers, setDbCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Upload & Associate states
@@ -51,6 +52,9 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
 
   const [editingOrder, setEditingOrder] = useState<any | null>(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+
+  const [editingCustomer, setEditingCustomer] = useState<any | null>(null);
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
 
   // Fetch collections on auth success
   useEffect(() => {
@@ -128,6 +132,12 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
       setDbImages(list);
     }, (err) => console.error("Images error:", err));
 
+    // Fetch Customers
+    const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => {
+      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setDbCustomers(list);
+    }, (err) => console.error("Customers error:", err));
+
     return () => {
       unsubProducts();
       unsubBanners();
@@ -136,6 +146,7 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
       unsubReviews();
       unsubInquiries();
       unsubImages();
+      unsubCustomers();
     };
   }, [isAuthenticated]);
 
@@ -405,6 +416,37 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
     }
   };
 
+  // Save Customer Handler
+  const handleSaveCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCustomer) return;
+    try {
+      const customerPayload = {
+        name: editingCustomer.name || 'Valued Customer',
+        phone: editingCustomer.phone || '',
+        email: editingCustomer.email || '',
+        address: editingCustomer.address || '',
+        notes: editingCustomer.notes || '',
+        updatedAt: serverTimestamp()
+      };
+
+      if (editingCustomer.id) {
+        await updateDoc(doc(db, 'customers', editingCustomer.id), customerPayload);
+      } else {
+        await addDoc(collection(db, 'customers'), {
+          ...customerPayload,
+          createdAt: serverTimestamp()
+        });
+      }
+      setIsCustomerModalOpen(false);
+      setEditingCustomer(null);
+      alert('Customer saved successfully to database!');
+    } catch (err) {
+      console.error('Error saving customer:', err);
+      alert('Failed to save customer.');
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
@@ -559,6 +601,14 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
           >
             <MessageSquare className="w-4 h-4" />
             <span>Inquiries & Files ({dbInquiries.length})</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('customers')}
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'customers' ? 'bg-white text-[#50007c] shadow-md' : 'text-purple-200 hover:bg-purple-900/50'}`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Customers Database ({dbCustomers.length})</span>
           </button>
         </nav>
 
@@ -969,7 +1019,7 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
             <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden space-y-4">
               <div className="p-6 border-b border-slate-200">
                 <h3 className="font-black text-slate-900 text-base">Customer Reviews ({dbReviews.length})</h3>
-                <p className="text-xs text-slate-500">Live reviews submitted by website visitors connected to Firebase</p>
+                <p className="text-xs text-slate-500">Approve or hide customer testimonials in real-time for homepage display</p>
               </div>
 
               <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -986,18 +1036,36 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
                           ))}
                         </div>
                       </div>
-                      <p className="text-xs text-slate-600">{rev.comment}</p>
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-[10px] text-slate-400">
-                        <span>Verified Buyer</span>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (rev.id) await deleteDoc(doc(db, 'reviews', rev.id));
-                          }}
-                          className="text-rose-600 hover:underline font-bold cursor-pointer"
-                        >
-                          Delete
-                        </button>
+                      <p className="text-xs text-slate-600">{rev.comment || rev.review}</p>
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-[10px]">
+                        <span className={`px-2 py-0.5 rounded-full font-bold ${rev.approved !== false ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                          {rev.approved !== false ? '✓ Approved & Live' : 'Hidden from Homepage'}
+                        </span>
+                        <div className="space-x-2">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (rev.id) {
+                                const newStatus = rev.approved === false ? true : false;
+                                await updateDoc(doc(db, 'reviews', rev.id), { approved: newStatus });
+                              }
+                            }}
+                            className={`px-2.5 py-1 rounded-lg font-bold cursor-pointer text-[10px] ${rev.approved !== false ? 'bg-amber-100 text-amber-800 hover:bg-amber-200' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                          >
+                            {rev.approved !== false ? 'Hide' : 'Approve'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (confirm('Delete this review?') && rev.id) {
+                                await deleteDoc(doc(db, 'reviews', rev.id));
+                              }
+                            }}
+                            className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-lg cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))
@@ -1122,6 +1190,105 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
               </div>
               <div className="p-6">
                 <p className="text-xs text-slate-500 italic">No pending inquiries.</p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'customers' && (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden space-y-4">
+              <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                  <h3 className="font-black text-slate-900 text-base">Customers Database ({dbCustomers.length})</h3>
+                  <p className="text-xs text-slate-500">Manage registered & manual customers, view order history and total spend calculation</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingCustomer({
+                      name: '',
+                      phone: '',
+                      email: '',
+                      address: '',
+                      notes: 'VIP Walk-in / Corporate Client'
+                    });
+                    setIsCustomerModalOpen(true);
+                  }}
+                  className="px-4 py-2.5 bg-[#50007c] hover:bg-[#3e0061] text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Customer Manually</span>
+                </button>
+              </div>
+
+              <div className="p-6">
+                {dbCustomers.length === 0 ? (
+                  <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-300 p-8">
+                    <Users className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                    <h4 className="font-bold text-slate-800 text-sm">No Customer Profiles in Database Yet</h4>
+                    <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Click "Add Customer Manually" above or record orders to automatically populate customer insights.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-200">
+                          <th className="p-3.5">Customer Name & Contact</th>
+                          <th className="p-3.5">Address / City</th>
+                          <th className="p-3.5">Total Orders</th>
+                          <th className="p-3.5">Total Spend</th>
+                          <th className="p-3.5">Notes</th>
+                          <th className="p-3.5 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {dbCustomers.map((cust, idx) => {
+                          const matchedOrders = dbOrders.filter(ord => 
+                            (cust.email && ord.email && ord.email.toLowerCase() === cust.email.toLowerCase()) ||
+                            (cust.phone && ord.phone && ord.phone.includes(cust.phone)) ||
+                            (cust.name && ord.customerName && ord.customerName.toLowerCase() === cust.name.toLowerCase())
+                          );
+                          const totalSpend = matchedOrders.reduce((sum, ord) => sum + (Number(ord.totalAmount) || 0), 0);
+
+                          return (
+                            <tr key={cust.id || idx} className="hover:bg-slate-50/85 transition-colors">
+                              <td className="p-3.5">
+                                <p className="font-bold text-slate-900">{cust.name || 'Valued Customer'}</p>
+                                <p className="text-[11px] text-slate-500">{cust.phone || 'No phone'} · {cust.email || 'No email'}</p>
+                              </td>
+                              <td className="p-3.5 text-slate-700 font-medium">{cust.address || 'Delhi NCR'}</td>
+                              <td className="p-3.5 font-bold text-[#50007c]">{matchedOrders.length} Orders</td>
+                              <td className="p-3.5 font-black text-slate-900">₹{totalSpend.toLocaleString()}</td>
+                              <td className="p-3.5 text-slate-600 max-w-xs truncate">{cust.notes || 'Manual Customer Entry'}</td>
+                              <td className="p-3.5 text-right space-x-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingCustomer(cust);
+                                    setIsCustomerModalOpen(true);
+                                  }}
+                                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg cursor-pointer"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (confirm('Delete this customer record?') && cust.id) {
+                                      await deleteDoc(doc(db, 'customers', cust.id));
+                                    }
+                                  }}
+                                  className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-lg cursor-pointer"
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1504,6 +1671,48 @@ export const MasterAdminPanel: React.FC<MasterAdminPanelProps> = ({ onClose }) =
 
               <button type="submit" className="w-full py-3 bg-[#50007c] hover:bg-[#3e0061] text-white font-black rounded-xl cursor-pointer shadow-md mt-4">
                 Save Order to Database & Revenue
+              </button>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* CUSTOMER EDIT / ADD MODAL */}
+      {isCustomerModalOpen && editingCustomer && (
+        <div className="fixed inset-0 z-60 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setIsCustomerModalOpen(false)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-lg font-black text-slate-900 mb-1">{editingCustomer.id ? 'Edit Customer Profile' : 'Add Manual Customer'}</h3>
+            <p className="text-xs text-slate-500 mb-4">Manage customer contact details, address, and notes.</p>
+
+            <form onSubmit={handleSaveCustomer} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Customer Name *</label>
+                <input type="text" value={editingCustomer.name || ''} onChange={e => setEditingCustomer({...editingCustomer, name: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" required />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Phone Number *</label>
+                  <input type="text" value={editingCustomer.phone || ''} onChange={e => setEditingCustomer({...editingCustomer, phone: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" required />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Email</label>
+                  <input type="email" value={editingCustomer.email || ''} onChange={e => setEditingCustomer({...editingCustomer, email: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" />
+                </div>
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Address / City</label>
+                <input type="text" value={editingCustomer.address || ''} onChange={e => setEditingCustomer({...editingCustomer, address: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Customer Notes / Company</label>
+                <textarea rows={3} value={editingCustomer.notes || ''} onChange={e => setEditingCustomer({...editingCustomer, notes: e.target.value})} className="w-full p-2.5 bg-slate-50 border rounded-xl" placeholder="VIP Client, Corporate Account..." />
+              </div>
+
+              <button type="submit" className="w-full py-3 bg-[#50007c] hover:bg-[#3e0061] text-white font-black rounded-xl cursor-pointer shadow-md mt-4">
+                Save Customer to Database
               </button>
             </form>
           </motion.div>
