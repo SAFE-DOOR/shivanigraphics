@@ -245,26 +245,38 @@ export const MarketingView: React.FC = () => {
 };
 
 export const ReviewsView: React.FC = () => {
-  const { reviews, toggleReviewApproval } = useAdmin();
+  const { reviews, toggleReviewApproval, deleteReview } = useAdmin();
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-black text-slate-900">Customer Reviews Moderation</h2>
+      <div>
+        <h2 className="text-lg font-black text-slate-900">Customer Reviews & Testimonials Moderation</h2>
+        <p className="text-xs text-slate-500">Approve reviews for public display on the homepage or delete negative/inappropriate reviews.</p>
+      </div>
       <div className="space-y-3">
         {reviews.map((r) => (
-          <div key={r.id} className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center justify-between gap-4 shadow-2xs">
+          <div key={r.id} className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-black text-slate-900">{r.name}</span>
                 <span className="text-xs text-amber-500 font-bold">★ {r.rating}.0</span>
+                <span className="text-[10px] text-slate-400 font-mono">{r.date}</span>
               </div>
-              <p className="text-xs text-slate-600 pt-1">"{r.review}"</p>
+              <p className="text-xs text-slate-700 pt-1">"{r.review}"</p>
             </div>
-            <button
-              onClick={() => toggleReviewApproval(r.id)}
-              className={`px-3 py-1.5 font-black text-xs rounded-xl cursor-pointer ${r.approved ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}
-            >
-              {r.approved ? 'Approved (Public)' : 'Hidden'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => toggleReviewApproval(r.id)}
+                className={`px-3 py-1.5 font-black text-xs rounded-xl cursor-pointer ${r.approved ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}
+              >
+                {r.approved ? 'Approved (Public)' : 'Hidden'}
+              </button>
+              <button
+                onClick={() => deleteReview(r.id)}
+                className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 font-black text-xs rounded-xl cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         ))}
       </div>

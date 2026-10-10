@@ -25,6 +25,7 @@ import {
   BUSINESS_OWNER_FULL,
   BUSINESS_TYPE
 } from '../utils/whatsapp';
+import { useAdmin } from '../context/AdminContext';
 
 interface AboutUsPageProps {
   onBackToHome: () => void;
@@ -32,6 +33,8 @@ interface AboutUsPageProps {
 }
 
 export const AboutUsPage: React.FC<AboutUsPageProps> = ({ onBackToHome, onExploreCatalog }) => {
+  const { websiteContent } = useAdmin();
+
   return (
     <div className="py-8 sm:py-12 bg-white">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-12">
@@ -51,12 +54,18 @@ export const AboutUsPage: React.FC<AboutUsPageProps> = ({ onBackToHome, onExplor
           </div>
 
           <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-            Crafting Tangible Brand Magic for Startups & Enterprises
+            {websiteContent.aboutTitle || 'Crafting Tangible Brand Magic for Startups & Enterprises'}
           </h1>
 
           <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-            Welcome to <strong className="text-slate-900">Shivani Graphics (Shivani Digital Prints)</strong>. Operating from Mahavir Enclave, New Delhi, we provide end-to-end commercial digital printing, corporate merchandise, exhibition displays, and official business stationery with rapid 4-hour express turnaround.
+            {websiteContent.aboutDescription || 'Welcome to Shivani Graphics (Shivani Digital Prints). Operating from Mahavir Enclave, New Delhi, we provide end-to-end commercial digital printing, corporate merchandise, exhibition displays, and official business stationery with rapid 4-hour express turnaround.'}
           </p>
+
+          {websiteContent.aboutMission && (
+            <div className="p-4 bg-purple-50 rounded-2xl border border-purple-200 text-xs font-bold text-purple-900">
+              Mission & Quality Promise: {websiteContent.aboutMission}
+            </div>
+          )}
         </div>
 
         {/* Big Facility Banner */}

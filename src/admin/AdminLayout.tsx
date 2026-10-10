@@ -13,6 +13,8 @@ import { QuotesView } from './QuotesView';
 import { CmsView } from './CmsView';
 import { InventoryView, MarketingView, ReviewsView, UsersView, AuditLogsView, DatabaseView } from './AdditionalViews';
 import { InvoicesHistoryView } from './InvoicesHistoryView';
+import { AnalyticsView } from './AnalyticsView';
+import { CustomersView } from './CustomersView';
 
 interface AdminLayoutProps {
   onBackToWebsite: () => void;
@@ -39,14 +41,16 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
       title: 'Overview',
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+        { id: 'analytics', label: 'Analytics (Recharts)', icon: <BarChart2 className="w-4 h-4 text-emerald-400" /> },
         { id: 'database', label: 'Database & JSON', icon: <Database className="w-4 h-4 text-orange-400" /> },
       ]
     },
     {
       title: 'Operations',
       items: [
-        { id: 'orders', label: 'Orders OMS', icon: <ShoppingBag className="w-4 h-4" /> },
-        { id: 'invoices', label: `Invoice History (${invoices.length})`, icon: <FileText className="w-4 h-4 text-purple-400" /> },
+        { id: 'orders', label: 'Orders & Tracking ID', icon: <ShoppingBag className="w-4 h-4" /> },
+        { id: 'customers', label: 'Customer Database', icon: <Users className="w-4 h-4 text-purple-400" /> },
+        { id: 'invoices', label: `Invoice History (${invoices.length})`, icon: <FileText className="w-4 h-4" /> },
         { id: 'quotes', label: 'Quote Requests', icon: <FileText className="w-4 h-4" /> },
       ]
     },
@@ -80,8 +84,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': return <DashboardView onNavigateTab={(tab) => setActiveTab(tab)} />;
+      case 'analytics': return <AnalyticsView />;
       case 'database': return <DatabaseView />;
       case 'orders': return <OrdersView />;
+      case 'customers': return <CustomersView />;
       case 'invoices': return <InvoicesHistoryView />;
       case 'products': return <ProductsView />;
       case 'banners': return <BannersImagesView />;
